@@ -38,7 +38,7 @@ export default async function AdminLayout(props: AdminLayoutProps) {
     <div className="w-full min-h-[calc(100vh-120px)] bg-surface text-on-surface text-left">
       {/* Admin Command Bar */}
       <div className="w-full bg-maroon-deep text-on-maroon border-b border-gold/30 py-3 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
+        <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
           <div className="flex items-center gap-3">
             <span className="px-2 py-1 rounded bg-gold text-on-gold font-bold text-xs uppercase tracking-widest flex items-center gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5" />
@@ -68,7 +68,7 @@ export default async function AdminLayout(props: AdminLayoutProps) {
       </div>
 
       {/* Menu + content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col lg:flex-row gap-6 items-start">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 flex flex-col lg:flex-row gap-6 items-start">
         <AdminIdleLogout />
         <AdminNav isHindi={isHindi} />
         <main className="flex-1 min-w-0 w-full text-left">

@@ -83,3 +83,4 @@ All hot lookups use an index (orders by customer, by status, by number, extra pl
 * MySQL cannot undo a half-finished migration (PostgreSQL could). Always run `migrate deploy` on a copy and keep a backup first.
 * `gen-catalog-migration.cjs` (PostgreSQL SQL generator) moved to `prisma/_postgres-archive/`.
 * Vercel runs `vercel-build` (migrate, then build); on Hostinger run `npx prisma migrate deploy` yourself on every update, and start the two daily jobs (`/api/cron/expire-orders`, `/api/cron/backup`, header `Authorization: Bearer <CRON_SECRET>`) from the host's scheduler.
+* File uploads on Hostinger: set `STORAGE_DRIVER=local` and `STORAGE_PATH` to a folder outside the app folder (for example `/home/USER/kjk-storage`). Without `STORAGE_DRIVER=local`, production refuses to save files ("Media upload failed"). Do not use `DEMO_MODE` for this.

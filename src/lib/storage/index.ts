@@ -95,14 +95,22 @@ export function validateFileMagicBytes(buffer: Buffer): { isValid: boolean; dete
 }
 
 /**
- * Local Disk implementation for development and client demo MVP.
+ * True when files may be kept on the server disk in production: set STORAGE_DRIVER=local (and STORAGE_PATH to a folder that
+ * survives redeploys) on a normal server such as Hostinger. Does not switch on any demo behaviour.
+ */
+export function isLocalDiskStorageAllowed(): boolean {
+  return process.env.STORAGE_DRIVER === "local";
+}
+
+/**
+ * Local Disk implementation for development, client demo and servers with a real disk (STORAGE_DRIVER=local).
  */
 export class LocalDiskStorageProvider implements StorageProvider {
   name = "LocalDiskStorageProvider";
   private baseDir: string;
 
   constructor(baseDir?: string) {
-    assertPlaceholderAllowed("LocalDiskStorageProvider");
+    if (!isLocalDiskStorageAllowed()) assertPlaceholderAllowed("LocalDiskStorageProvider");
     this.baseDir =
       baseDir || process.env.STORAGE_PATH || path.join(process.cwd(), "storage");
   }
@@ -266,7 +274,7 @@ export function getStorageProvider(): StorageProvider {
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     return new VercelBlobStorageProvider();
   }
-  if (process.env.NODE_ENV === "production" && !isDemoMode()) {
+  if (process.env.NODE_ENV === "production" && !isDemoMode() && !isLocalDiskStorageAllowed()) {
     return new S3StorageProvider();
   }
   return new LocalDiskStorageProvider();
