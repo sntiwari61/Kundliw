@@ -6,6 +6,8 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Shared hosting caps how many processes can run; Next would otherwise start one worker per CPU of the host (63 on Hostinger).
+  experimental: { cpus: Number(process.env.BUILD_CPUS) || 2 },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "placehold.co" },
