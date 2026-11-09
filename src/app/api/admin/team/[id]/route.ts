@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { guardApiAdmin } from "@/lib/auth/guards";
 import { validateCsrfOrigin } from "@/lib/auth/csrf";
 import { prisma } from "@/lib/prisma";
-import { teamSchema } from "../route";
+import { teamSchema } from "@/lib/validation/teamSchema";
 
 export const dynamic = "force-dynamic";
 

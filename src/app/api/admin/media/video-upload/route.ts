@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * (kept apart from the private store used for documents).
  */
 const TOKEN = () => process.env.VIDEO_BLOB_READ_WRITE_TOKEN || "";
-export const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 const ALLOWED_TYPES = ["video/mp4", "video/webm", "video/quicktime", "video/ogg", "video/x-m4v"];
 
 /** Tells the admin screen whether video upload is switched on. */
