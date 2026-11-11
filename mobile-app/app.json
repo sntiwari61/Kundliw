@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Kanad Jyotish",
+    "slug": "kanad-jyotish",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.kanadjyotish.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFAF3",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "org.kanadjyotish.app",
+      "versionCode": 1
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFAF3"
+        }
+      ]
+    ],
+    "scheme": "kanadjyotish",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

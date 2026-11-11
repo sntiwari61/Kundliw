@@ -12,7 +12,7 @@ const config = [
     },
   },
   {
-    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "tests-e2e/**", "test-results/**"],
+    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "tests-e2e/**", "test-results/**", "mobile-app/**"],
   },
 ];
 
