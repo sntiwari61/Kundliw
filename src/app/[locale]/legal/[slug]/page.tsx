@@ -8,6 +8,7 @@ import { normalizeBlocks } from "@/lib/content/media";
 import { ShieldCheck, Scale, FileText, ArrowLeft, Mail } from "lucide-react";
 import { kendraEmail } from "@/lib/content/contact";
 import { Link } from "@/i18n/routing";
+import { legalContentFor } from "@/lib/legal/defaults";
 
 interface LegalPageProps {
   params: Promise<{
@@ -35,7 +36,8 @@ export async function generateMetadata(props: LegalPageProps): Promise<Metadata>
     })
     .catch(() => null);
 
-  const title = isHindi ? page?.titleHi : page?.titleEn;
+  const shown = legalContentFor(slug, page && page.isActive ? page : null);
+  const title = isHindi ? shown?.titleHi : shown?.titleEn;
   return {
     title: `${title || slug.toUpperCase()} • महर्षि कणाद ज्योतिष केंद्र`,
     description: isHindi
@@ -67,12 +69,14 @@ export default async function LegalPage(props: LegalPageProps) {
     })
     .catch(() => null);
 
-  if (!page) {
+  // An inactive page is hidden; a page the admin has not edited shows the standard text
+  const shown = legalContentFor(slug, page && page.isActive ? page : null);
+  if ((page && !page.isActive) || !shown) {
     notFound();
   }
 
-  const title = isHindi ? page.titleHi : page.titleEn;
-  const content = isHindi ? page.contentHi : page.contentEn;
+  const title = isHindi ? shown.titleHi : shown.titleEn;
+  const content = isHindi ? shown.contentHi : shown.contentEn;
 
   return (
     <div className="w-full max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-left space-y-8">
@@ -111,7 +115,7 @@ export default async function LegalPage(props: LegalPageProps) {
         <RichText text={content} />
       </div>
 
-      <BlocksView blocks={normalizeBlocks(page.blocks)} isHindi={isHindi} />
+      <BlocksView blocks={normalizeBlocks(page?.blocks)} isHindi={isHindi} />
 
       <div className="p-4 rounded-xl bg-surface border border-outline-variant/40 text-sm text-on-surface flex flex-wrap items-center gap-x-3 gap-y-1">
         <Mail className="w-4 h-4 text-primary shrink-0" />

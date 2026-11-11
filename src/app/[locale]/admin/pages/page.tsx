@@ -3,6 +3,7 @@
 import { LinkTextarea } from "@/components/admin/LinkTextarea";
 import React, { useState, useEffect, useRef } from "react";
 import { Save, CheckCircle2, AlertCircle, Plus, Trash2, ExternalLink, ArrowLeft, ArrowRight, Pencil, RotateCcw } from "lucide-react";
+import { LEGAL_DEFAULTS, isSeedStub } from "@/lib/legal/defaults";
 import { DEFAULT_GUIDES, GUIDE_SLUGS, guidePageSlug } from "@/lib/guides/defaults";
 import { ContentBlock, normalizeBlocks } from "@/lib/content/media";
 import { isCorePageSlug } from "@/lib/content/pages";
@@ -31,6 +32,10 @@ const PRESET_PAGES = [
   { slug: "terms", name: "Terms of Service & Astrological Ethics (नियम व शर्तें)", path: "/legal/terms" },
   { slug: "privacy", name: "Privacy Policy (गोपनीयता नीति)", path: "/legal/privacy" },
   { slug: "refund", name: "Cancellation & Refund Policy (धनवापसी नीति)", path: "/legal/refund" },
+  { slug: "cancellation", name: "Cancellation Policy (रद्दीकरण नीति)", path: "/legal/cancellation" },
+  { slug: "platform-guidelines", name: "Platform Guidelines (प्लेटफ़ॉर्म दिशानिर्देश)", path: "/legal/platform-guidelines" },
+  { slug: "member-agreement", name: "Member Agreement (सदस्य अनुबंध)", path: "/legal/member-agreement" },
+  { slug: "rules-regulations", name: "Rules & Regulations (नियम एवं विनियम)", path: "/legal/rules-regulations" },
   { slug: "guide-user", name: "Guide: User (उपयोगकर्ता मार्गदर्शिका)", path: "/guides/user" },
   { slug: "guide-associate", name: "Guide: Associate (एसोसिएट मार्गदर्शिका)", path: "/guides/associate" },
   { slug: "guide-admin", name: "Guide: Admin (एडमिन मार्गदर्शिका)", path: "/guides/admin" },
@@ -69,7 +74,19 @@ export default function AdminPagesPage() {
 
   const loadSlugData = (slug: string, pagesList: StaticPageItem[]) => {
     const existing = pagesList.find((p) => p.slug === slug);
-    if (existing) {
+    const legalDef = LEGAL_DEFAULTS[slug];
+    if (legalDef && (!existing || isSeedStub(existing.contentEn))) {
+      setTitleEn(legalDef.titleEn);
+      setTitleHi(legalDef.titleHi);
+      setContentEn(legalDef.contentEn);
+      setContentHi(legalDef.contentHi);
+      setBlocks(normalizeBlocks(existing?.blocks));
+      setIsActive(existing ? existing.isActive : true);
+      setShowInFooter(existing ? existing.showInFooter : false);
+      setShowInMenu(!!existing?.showInMenu);
+      setMetaDescEn(existing?.metaDescEn || "");
+      setMetaDescHi(existing?.metaDescHi || "");
+    } else if (existing) {
       setTitleEn(existing.titleEn);
       setTitleHi(existing.titleHi);
       setContentEn(existing.contentEn);

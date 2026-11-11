@@ -12,6 +12,7 @@ import { LocationMap } from "@/components/content/LocationMap";
 import QRCode from "qrcode";
 import { ExternalLink, Phone, Mail, Clock, Globe, HelpCircle, MessageSquare, Headphones, Download, Smartphone } from "lucide-react";
 import { sizedImage } from "@/lib/content/media";
+import { LEGAL_DEFAULT_SLUGS } from "@/lib/legal/defaults";
 
 export async function Footer() {
   const locale = await getLocale();
@@ -56,8 +57,14 @@ export async function Footer() {
     { slug: "ephemeris-sources", label: t("ephemerisLink") },
   ];
   const livePagesP = prisma.staticPage
-    .findMany({ where: { isActive: true, slug: { in: LEGAL_PAGES.flatMap((l) => [`legal/${l.slug}`, l.slug]) } }, select: { slug: true } })
-    .then((rows) => new Set(rows.map((r) => r.slug.replace(/^legal\//, ""))))
+    .findMany({ where: { slug: { in: LEGAL_PAGES.flatMap((l) => [`legal/${l.slug}`, l.slug]) } }, select: { slug: true, isActive: true } })
+    .then((rows) => {
+      const live = new Set(rows.filter((r) => r.isActive).map((r) => r.slug.replace(/^legal\//, "")));
+      const hidden = new Set(rows.filter((r) => !r.isActive).map((r) => r.slug.replace(/^legal\//, "")));
+      // A page the admin has not written yet shows the standard text, so it is listed too
+      for (const d of LEGAL_DEFAULT_SLUGS) if (!hidden.has(d)) live.add(d);
+      return live;
+    })
     .catch(() => null);
   // The three database reads run together
   const [settings, footerPages, livePages] = await Promise.all([settingsP, footerPagesP, livePagesP]);

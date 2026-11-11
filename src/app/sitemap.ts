@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { isCorePageSlug } from "@/lib/content/pages";
 import { LOCALES, absoluteUrl, localizedPath } from "@/lib/seo";
+import { LEGAL_DEFAULT_SLUGS } from "@/lib/legal/defaults";
 
 export const dynamic = "force-dynamic";
 
@@ -60,5 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...posts.flatMap((p) => entriesFor(`/blogs/${p.slug}`, p.updatedAt, 0.6, "monthly")),
     ...custom.flatMap((p) => entriesFor(`/pages/${p.slug}`, p.updatedAt, 0.5, "monthly")),
     ...legal.flatMap((p) => entriesFor(`/${p.slug}`, p.updatedAt, 0.3, "yearly")),
+    // standard legal pages the admin has not saved yet
+    ...LEGAL_DEFAULT_SLUGS.filter((d) => !legal.some((p) => p.slug === `legal/${d}`)).flatMap((d) => entriesFor(`/legal/${d}`, undefined, 0.3, "yearly")),
   ];
 }
