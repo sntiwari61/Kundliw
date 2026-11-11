@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { put, get as getBlob } from "@vercel/blob";
+import { put, get as getBlob, del as delBlob } from "@vercel/blob";
 import { assertPlaceholderAllowed, isDemoMode } from "@/lib/config/demo";
 
 export interface StoredFileResult {
@@ -19,6 +19,8 @@ export interface StorageProvider {
     subfolder?: string
   ): Promise<StoredFileResult>;
   getFile(storageKey: string): Promise<{ buffer: Buffer; mimeType: string }>;
+  /** Removes a stored file (used when an account is deleted). A missing file is not an error. */
+  deleteFile?(storageKey: string): Promise<void>;
 }
 
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB strict limit
@@ -169,6 +171,13 @@ export class LocalDiskStorageProvider implements StorageProvider {
       mimeType: detectedMime || "application/octet-stream",
     };
   }
+
+  async deleteFile(storageKey: string): Promise<void> {
+    const fullPath = resolveWithinBase(this.baseDir, storageKey);
+    if (fs.existsSync(/*turbopackIgnore: true*/ fullPath)) {
+      fs.unlinkSync(/*turbopackIgnore: true*/ fullPath);
+    }
+  }
 }
 
 /**
@@ -264,6 +273,15 @@ export class VercelBlobStorageProvider implements StorageProvider {
       buffer,
       mimeType: detectedMime || result.blob.contentType || "application/octet-stream",
     };
+  }
+
+  async deleteFile(storageKey: string): Promise<void> {
+    const [subfolder, ...rest] = storageKey.split("/");
+    assertAllowedSubfolder(subfolder);
+    if (rest.length === 0 || rest.some((seg) => seg === ".." || seg === "." || seg === "")) {
+      throw new Error("Invalid storage path.");
+    }
+    await delBlob(storageKey);
   }
 }
 

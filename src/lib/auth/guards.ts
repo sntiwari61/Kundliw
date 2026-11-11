@@ -4,6 +4,8 @@ import { authOptions } from "./authOptions";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { bearerFrom, passwordFingerprint, verifyMobileToken } from "@/lib/mobile/token";
 
 export interface AuthenticatedUser {
   id: string;
@@ -17,6 +19,15 @@ export interface AuthenticatedUser {
  * Returns currently authenticated user by validating session and re-verifying against database.
  */
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+  // The mobile app sends "Authorization: Bearer <access token>"; the website uses its session cookie.
+  let bearer: string | null = null;
+  try {
+    bearer = bearerFrom((await headers()).get("authorization"));
+  } catch {
+    bearer = null; // outside a request
+  }
+  if (bearer) return getMobileUser(bearer);
+
   const session = await getServerSession(authOptions);
   if (!session || !session.user || !session.user.id) {
     return null;
@@ -39,6 +50,20 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
   }
 
   return dbUser as AuthenticatedUser;
+}
+
+/** The account behind a mobile access token, read fresh from the database (role and password are never trusted from the token). */
+async function getMobileUser(token: string): Promise<AuthenticatedUser | null> {
+  const verified = await verifyMobileToken(token, "mobile-access");
+  if (!verified) return null;
+  const dbUser = await prisma.user.findUnique({
+    where: { id: verified.userId },
+    select: { id: true, name: true, email: true, phone: true, role: true, passwordHash: true },
+  });
+  if (!dbUser || passwordFingerprint(dbUser.passwordHash) !== verified.pw) return null;
+  const { passwordHash: _unused, ...user } = dbUser;
+  void _unused;
+  return user as AuthenticatedUser;
 }
 
 /**
