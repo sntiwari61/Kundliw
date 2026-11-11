@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, requireAdmin } from "@/lib/auth/guards";
+import { GUIDE_PDFS } from "@/lib/guides/pdfs";
 import { DEFAULT_GUIDES, GUIDE_SLUGS, guidePageSlug, type GuideSlug } from "@/lib/guides/defaults";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { loadGuideVisuals } from "@/lib/guides/visuals";
@@ -46,6 +47,7 @@ export default async function GuidePage(props: GuidePageProps) {
   const title = isHindi ? stored?.titleHi || fallback.titleHi : stored?.titleEn || fallback.titleEn;
   const content = isHindi ? stored?.contentHi || fallback.contentHi : stored?.contentEn || fallback.contentEn;
 
+  const guideName = guideSlug === "admin" ? "Admin" : guideSlug === "user" ? "User" : "Associate";
   const visuals = await loadGuideVisuals(guideSlug);
 
   return (
@@ -59,22 +61,24 @@ export default async function GuidePage(props: GuidePageProps) {
         </div>
         <PrintButton label={isHindi ? "प्रिंट / PDF सहेजें" : "Print / Save as PDF"} />
       </header>
-      {guideSlug === "admin" && (
+      {(
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-outline-variant/50 bg-surface-container p-4 text-sm print:hidden">
           <span className="font-semibold text-secondary">
             {isHindi ? "स्क्रीन के चित्रों सहित पूरी मार्गदर्शिका:" : "The full guide with screenshots:"}
           </span>
-          <a href="/guides/Admin-Panel-Guide-English.pdf" target="_blank" rel="noreferrer" className="min-h-[44px] inline-flex items-center rounded border border-maroon px-3 font-bold text-primary hover:bg-brand/20">
+          <a href={GUIDE_PDFS[guideSlug].en} target="_blank" rel="noreferrer" className="min-h-[44px] inline-flex items-center rounded border border-maroon px-3 font-bold text-primary hover:bg-brand/20">
             {isHindi ? "PDF डाउनलोड (अंग्रेज़ी)" : "Download illustrated PDF (English)"}
           </a>
-          <a href="/guides/Admin-Panel-Guide-Hindi.pdf" target="_blank" rel="noreferrer" className="min-h-[44px] inline-flex items-center rounded border border-maroon px-3 font-bold text-primary hover:bg-brand/20">
+          <a href={GUIDE_PDFS[guideSlug].hi} target="_blank" rel="noreferrer" className="min-h-[44px] inline-flex items-center rounded border border-maroon px-3 font-bold text-primary hover:bg-brand/20">
             {isHindi ? "PDF डाउनलोड (हिन्दी)" : "Download illustrated PDF (हिन्दी)"}
           </a>
-          <span className="w-full text-xs text-on-surface-variant">
-            {isHindi
-              ? "नीचे का पाठ आप पेज व कानूनी → Guide: Admin में बदल सकते हैं; \"प्रिंट / PDF सहेजें\" हमेशा ताज़ा पाठ छापता है।"
-              : "You can edit the text below under Pages & legal → Guide: Admin; \"Print / Save as PDF\" always prints the latest text."}
-          </span>
+          {guideSlug === "admin" && (
+            <span className="w-full text-xs text-on-surface-variant">
+              {isHindi
+                ? `नीचे का पाठ एडमिन पेज व कानूनी → Guide: ${guideName} में बदल सकता है; \"प्रिंट / PDF सहेजें\" हमेशा ताज़ा पाठ छापता है।`
+                : `The Kendra can edit the text below under Pages & legal → Guide: ${guideName}; \"Print / Save as PDF\" always prints the latest text.`}
+            </span>
+          )}
         </div>
       )}
       <div className="leading-relaxed text-base text-on-surface space-y-3"><RichText text={content} /></div>

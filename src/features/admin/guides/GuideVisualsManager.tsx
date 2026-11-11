@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GUIDE_PDFS } from "@/lib/guides/pdfs";
 import { DemosEditor } from "@/components/admin/DemosEditor";
 import type { DemoItem } from "@/lib/content/demos";
 
@@ -41,10 +42,10 @@ export function GuideVisualsManager({ guides, isHindi }: { guides: GuideBox[]; i
               <a href={`/guides/${g.slug}`} target="_blank" rel="noreferrer" className="hover:underline">{t("View", "देखें")}</a>
               <a href={`/api/guides/${g.slug}?lang=${isHindi ? "hi" : "en"}&download=1`} className="hover:underline">{t("Download", "डाउनलोड")}</a>
               <a href={`/api/guides/${g.slug}?lang=${isHindi ? "hi" : "en"}&print=1`} target="_blank" rel="noreferrer" className="hover:underline">{t("Print / PDF", "प्रिंट / PDF")}</a>
-              {g.slug === "admin" && (
+              {(
                 <>
-                  <a href="/guides/Admin-Panel-Guide-English.pdf" target="_blank" rel="noreferrer" className="hover:underline">{t("Illustrated PDF (English)", "चित्रों सहित PDF (अंग्रेज़ी)")}</a>
-                  <a href="/guides/Admin-Panel-Guide-Hindi.pdf" target="_blank" rel="noreferrer" className="hover:underline">{t("Illustrated PDF (हिन्दी)", "चित्रों सहित PDF (हिन्दी)")}</a>
+                  <a href={GUIDE_PDFS[g.slug].en} target="_blank" rel="noreferrer" className="hover:underline">{t("Illustrated PDF (English)", "चित्रों सहित PDF (अंग्रेज़ी)")}</a>
+                  <a href={GUIDE_PDFS[g.slug].hi} target="_blank" rel="noreferrer" className="hover:underline">{t("Illustrated PDF (हिन्दी)", "चित्रों सहित PDF (हिन्दी)")}</a>
                 </>
               )}
             </span>
