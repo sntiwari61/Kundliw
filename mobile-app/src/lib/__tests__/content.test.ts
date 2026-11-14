@@ -39,3 +39,27 @@ describe("content helpers", () => {
     expect(plainText("A **bold** [link](https://x.com) text")).toBe("A bold link text");
   });
 });
+
+import { birthPayload, emptyBirth, prashnaPayload, queryTimestamp, validateBirth, validatePrashna } from "../astro";
+
+describe("Kundli request forms", () => {
+  it("accepts good birth details and sends them the way the website expects", () => {
+    const f = { ...emptyBirth(), name: " Ram Kumar ", dob: "5-2-1990", tob: "6:05", pob: " Varanasi " };
+    expect(validateBirth(f)).toEqual({});
+    expect(birthPayload(f)).toEqual({ name: "Ram Kumar", gender: "MALE", dob: "1990-02-05", tob: "06:05", pob: "Varanasi" });
+  });
+
+  it("flags every wrong birth detail", () => {
+    expect(Object.keys(validateBirth(emptyBirth())).sort()).toEqual(["dob", "name", "pob", "tob"]);
+    expect(validateBirth({ ...emptyBirth(), name: "Ram", dob: "31-02-1990", tob: "25:00", pob: "Kashi" })).toEqual({ dob: "errDob", tob: "errTob" });
+  });
+
+  it("checks the Prashna form and stamps the moment of the question", () => {
+    const f = { name: "Sita", phone: "9876543210", email: "", category: "CAREER" as const, questionText: "Will I get a job?", placeOfQuery: "Kashi" };
+    expect(validatePrashna(f)).toEqual({});
+    expect(Object.keys(validatePrashna({ ...f, phone: "123", questionText: "hi", email: "x" })).sort()).toEqual(["email", "phone", "questionText"]);
+    const at = new Date(2026, 10, 14, 9, 5);
+    expect(queryTimestamp(at)).toBe("2026-11-14T09:05");
+    expect(prashnaPayload(f, at)).toEqual({ name: "Sita", phone: "9876543210", category: "CAREER", questionText: "Will I get a job?", queryTimestamp: "2026-11-14T09:05", placeOfQuery: "Kashi" });
+  });
+});

@@ -33,6 +33,8 @@ export default function AppLayout() {
       <Stack.Screen name="explore/testimonials" options={{ title: t("testimonialsTitle") }} />
       <Stack.Screen name="explore/offers" options={{ title: t("offersTitle") }} />
       <Stack.Screen name="explore/contact" options={{ title: t("contactTitle") }} />
+      <Stack.Screen name="explore/tool/[tool]" options={{ title: t("toolsIntro") }} />
+      <Stack.Screen name="explore/request/[type]" options={{ title: t("requestKundli") }} />
       <Stack.Screen name="delete-account" options={{ title: t("deleteTitle") }} />
     </Stack>
   );

@@ -32,6 +32,11 @@ export default function HomeScreen() {
   ];
 
   const explore: { icon: IconName; label: string; path: string }[] = [
+    { icon: "planet", label: t("kundliTool"), path: "/explore/tool/kundli" },
+    { icon: "calendar", label: t("panchangTool"), path: "/explore/tool/panchang" },
+    { icon: "heart-circle", label: t("matchingTool"), path: "/explore/tool/matching" },
+    { icon: "create", label: t("requestKundli"), path: "/explore/request/kundli" },
+    { icon: "help-buoy", label: t("requestPrashna"), path: "/explore/request/prashna" },
     { icon: "information-circle", label: t("aboutUs"), path: "/explore/about" },
     { icon: "person-circle", label: t("founderTitle"), path: "/explore/founder" },
     { icon: "pricetags", label: t("offersTitle"), path: "/explore/offers" },
