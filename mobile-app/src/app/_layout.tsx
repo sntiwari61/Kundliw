@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
+import { AppState, Platform } from "react-native";
+import * as NavigationBar from "expo-navigation-bar";
 import { useFonts } from "expo-font";
 import { CormorantGaramond_700Bold } from "@expo-google-fonts/cormorant-garamond";
 import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
@@ -35,7 +37,25 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   );
 }
 
+/** Hides the phone's own back/home/recents bar so the app fills the screen; a swipe from the bottom edge shows it for a moment. */
+function useImmersiveNavigationBar() {
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const hide = () => NavigationBar.setVisibilityAsync("hidden").catch(() => undefined);
+    hide();
+    const visibility = NavigationBar.addVisibilityListener(({ visibility: v }) => {
+      if (v === "visible") setTimeout(hide, 2500);
+    });
+    const app = AppState.addEventListener("change", (state) => state === "active" && hide());
+    return () => {
+      visibility.remove();
+      app.remove();
+    };
+  }, []);
+}
+
 export default function RootLayout() {
+  useImmersiveNavigationBar();
   const [loaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,

@@ -1,10 +1,11 @@
 import { StyleSheet } from "react-native";
+import { Text } from "@/components/Text";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { colors, fonts } from "@/theme";
+import { colors } from "@/theme";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -30,7 +31,12 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.outline,
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        // A label of our own: the default one cut Hindi words down to "..." on some phones
+        tabBarLabel: ({ children, color }) => (
+          <Text numberOfLines={1} style={{ fontSize: 11, lineHeight: 16, color, textAlign: "center", fontWeight: "500" }}>
+            {children}
+          </Text>
+        ),
         tabBarStyle: [styles.bar, { height: 60 + insets.bottom, paddingBottom: insets.bottom + 6 }],
         sceneStyle: { backgroundColor: colors.surface },
       }}
