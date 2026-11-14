@@ -1,19 +1,25 @@
-import { useState } from "react";
-import { Image, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import { router } from "expo-router";
+import { Image, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LangChip } from "@/components/LangChip";
+import { Text } from "@/components/Text";
 import { Button, Card, ErrorText, Field, Segmented } from "@/components/ui";
 import { ApiError, type Portal } from "@/lib/api";
 import { siteUrl } from "@/lib/config";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { isValidOtp, isValidPhone } from "@/lib/validation";
-import { colors, space } from "@/theme";
+import { colors, gradients, radius, shadow, space } from "@/theme";
 
 type Method = "otp" | "password";
 
 export default function SignInScreen() {
-  const { t, lang, setLang } = useLanguage();
-  const { api, signInWithOtp, signInWithPassword } = useSession();
+  const { t, lang } = useLanguage();
+  const insets = useSafeAreaInsets();
+  const { api, user, signInWithOtp, signInWithPassword } = useSession();
+  const leave = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
   const [portal, setPortal] = useState<Portal>("user");
   const [method, setMethod] = useState<Method>("otp");
@@ -61,24 +67,31 @@ export default function SignInScreen() {
 
   const resetError = () => setError("");
 
+  // Opened over the app for guests: once signed in, go back to where they were (the booking form keeps its entries)
+  useEffect(() => {
+    if (user) leave();
+  }, [user]);
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.langRow}>
-            <Segmented
-              options={[
-                { value: "hi", label: "हिन्दी" },
-                { value: "en", label: "EN" },
-              ]}
-              value={lang}
-              onChange={setLang}
-            />
-          </View>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.hero, { paddingTop: insets.top + space.md }]}>
+            <View style={styles.langRow}>
+              <LangChip />
+            </View>
+            <View style={styles.logoBox}>
+              <Image source={require("../../assets/splash-icon.png")} style={styles.logo} resizeMode="contain" accessibilityIgnoresInvertColors />
+            </View>
+            <Text serif style={styles.title}>
+              {t("appName")}
+            </Text>
+            <Text serif style={styles.shloka}>
+              ॐ असतो मा सद्गमय। तमसो मा ज्योतिर्गमय।
+            </Text>
+          </LinearGradient>
 
-          <Image source={require("../../assets/splash-icon.png")} style={styles.logo} resizeMode="contain" accessibilityIgnoresInvertColors />
-          <Text style={styles.title}>{t("appName")}</Text>
-
+          <View style={styles.form}>
           <Card>
             <Text style={styles.label}>{t("signInAs")}</Text>
             <Segmented
@@ -175,19 +188,32 @@ export default function SignInScreen() {
             )}
           </Card>
 
-          <Button label={t("register")} variant="outline" onPress={() => Linking.openURL(siteUrl("/auth/register", lang))} />
+          <Button label={t("register")} variant="outline" onPress={() => router.push("/register")} />
+          <Button label={t("continueBrowsing")} variant="text" onPress={leave} />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
-  content: { padding: space.lg, gap: space.lg, flexGrow: 1 },
-  langRow: { alignSelf: "flex-end", width: 160 },
-  logo: { width: 180, height: 135, alignSelf: "center" },
-  title: { fontSize: 22, fontWeight: "700", color: colors.heading, textAlign: "center" },
-  label: { fontSize: 13, fontWeight: "700", color: colors.textMuted },
+  content: { flexGrow: 1, paddingBottom: space.xxl },
+  hero: {
+    paddingHorizontal: space.lg,
+    paddingBottom: space.xxl + space.lg,
+    alignItems: "center",
+    gap: space.md,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  langRow: { alignSelf: "flex-end" },
+  logoBox: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.sm, ...shadow.strong },
+  logo: { width: 190, height: 142 },
+  title: { fontSize: 26, color: colors.onMaroon, textAlign: "center", lineHeight: 32 },
+  shloka: { fontSize: 16, color: colors.goldSoft, textAlign: "center" },
+  form: { paddingHorizontal: space.lg, gap: space.lg, marginTop: -space.xl },
+  label: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
   hint: { fontSize: 14, color: colors.text, lineHeight: 20 },
 });

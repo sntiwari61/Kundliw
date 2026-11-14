@@ -27,7 +27,10 @@ export type Portal = "user" | "associate";
 
 interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  /** JSON by default; pass a FormData to upload a file */
   body?: unknown;
+  /** a longer time allowance for uploads */
+  timeoutMs?: number;
   /** false for sign-in and other calls made before the person is signed in */
   auth?: boolean;
 }
@@ -41,7 +44,35 @@ export interface ApiClientOptions {
   timeoutMs?: number;
 }
 
-const NETWORK_MESSAGE = "Could not reach the server. Please check your internet connection.";
+let apiLanguage: "hi" | "en" = "hi";
+/** The screen language, so messages the server does not supply are shown in it */
+export function setApiLanguage(lang: "hi" | "en") {
+  apiLanguage = lang;
+}
+
+const MESSAGES = {
+  network: {
+    en: "Could not reach the server. Please check your internet connection.",
+    hi: "सर्वर से संपर्क नहीं हो पाया। कृपया अपना इंटरनेट जाँचें।",
+  },
+  unavailable: {
+    en: "This feature is not available right now. Please try again later or update the app.",
+    hi: "यह सुविधा अभी उपलब्ध नहीं है। कृपया बाद में प्रयास करें या ऐप अपडेट करें।",
+  },
+  server: {
+    en: "The server had a problem. Please try again in a little while.",
+    hi: "सर्वर में समस्या आई। कृपया थोड़ी देर बाद फिर प्रयास करें।",
+  },
+  generic: {
+    en: "Something went wrong. Please try again.",
+    hi: "कुछ गड़बड़ हो गई। कृपया फिर प्रयास करें।",
+  },
+} as const;
+
+function fallbackMessage(status: number): string {
+  const kind = status === 404 ? "unavailable" : status >= 500 ? "server" : "generic";
+  return MESSAGES[kind][apiLanguage];
+}
 
 /**
  * The one place the app talks to the server. It adds the access token, and when the server answers
@@ -64,20 +95,21 @@ export function createApiClient(opts: ApiClientOptions) {
 
   async function raw(path: string, o: RequestOptions, accessToken: string | null): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? timeoutMs);
+    const isForm = typeof FormData !== "undefined" && o.body instanceof FormData;
     try {
       return await doFetch(`${opts.baseUrl}${path}`, {
         method: o.method ?? "GET",
         headers: {
           Accept: "application/json",
-          ...(o.body !== undefined ? { "Content-Type": "application/json" } : {}),
+          ...(o.body !== undefined && !isForm ? { "Content-Type": "application/json" } : {}),
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: o.body !== undefined ? JSON.stringify(o.body) : undefined,
+        body: o.body === undefined ? undefined : isForm ? (o.body as FormData) : JSON.stringify(o.body),
         signal: controller.signal,
       });
     } catch {
-      throw new ApiError(NETWORK_MESSAGE, 0);
+      throw new ApiError(MESSAGES.network[apiLanguage], 0);
     } finally {
       clearTimeout(timer);
     }
@@ -91,10 +123,16 @@ export function createApiClient(opts: ApiClientOptions) {
       data = null;
     }
     if (!res.ok) {
-      const message =
+      let message =
         data && typeof data === "object" && typeof (data as { error?: unknown }).error === "string"
           ? (data as { error: string }).error
-          : "Something went wrong. Please try again.";
+          : fallbackMessage(res.status);
+      // The website's validation answer lists the faulty fields; show the first reason instead of "Validation failed"
+      const details = data && typeof data === "object" ? (data as { details?: unknown }).details : null;
+      if (details && typeof details === "object") {
+        const first = Object.values(details as Record<string, unknown>).flat().find((v) => typeof v === "string");
+        if (typeof first === "string") message = first;
+      }
       throw new ApiError(message, res.status);
     }
     return data as T;
@@ -169,6 +207,11 @@ export function createApiClient(opts: ApiClientOptions) {
     },
     async me() {
       return (await request<{ user: ApiUser }>("/api/mobile/v1/me")).user;
+    },
+    /** The current access token, for downloads that cannot go through `request`. Call `me()` first to refresh an expired one. */
+    async accessToken(): Promise<string | null> {
+      await ensureLoaded();
+      return tokens?.accessToken ?? null;
     },
     /** Signing out only removes the tokens from this phone. */
     async signOut() {

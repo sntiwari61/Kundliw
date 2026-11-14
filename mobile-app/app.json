@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.kanadjyotish.app"
+      "bundleIdentifier": "org.maharshikanadjyotishkendra.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +17,7 @@
         "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "org.kanadjyotish.app",
+      "package": "org.maharshikanadjyotishkendra.app",
       "versionCode": 1
     },
     "plugins": [
@@ -32,11 +32,24 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFFAF3"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-sharing"
     ],
     "scheme": "kanadjyotish",
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "0731edc4-1d55-4b0e-b27d-ba6081d7e879"
+      }
+    },
+    "owner": "sntiwari61"
   }
 }

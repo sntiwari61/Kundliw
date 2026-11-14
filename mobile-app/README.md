@@ -28,7 +28,7 @@ npm test
 
 ## Build for the Play Store
 Builds are made with EAS (`npx eas-cli@latest build --platform android`), signed in with the client's Expo account.
-The Android package name is `org.kanadjyotish.app` (in `app.json`). It can never be changed after the first upload to Google Play.
+The Android package name is `org.maharshikanadjyotishkendra.app` (in `app.json`). It can never be changed after the first upload to Google Play.
 
 ## Layout
 - `src/app` screens (file = route). `sign-in`, `offline`, and the signed-in group `(app)`
