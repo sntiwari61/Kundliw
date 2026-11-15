@@ -1,9 +1,10 @@
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pill, TapCard } from "@/components/ui";
 import { Text } from "@/components/Text";
 import type { CatalogService } from "@/lib/booking";
+import { imageUri } from "@/lib/content";
 import { useLanguage } from "@/lib/i18n";
 import { formatPaise } from "@/lib/validation";
 import { colors, radius, space } from "@/theme";
@@ -15,11 +16,20 @@ export function ServiceCard({ service }: { service: CatalogService }) {
   const count = service.plans.length;
   return (
     <TapCard onPress={() => router.push({ pathname: "/service/[slug]", params: { slug: service.slug } })} style={styles.card}>
-      <View style={styles.icon}>
-        <Ionicons name="sparkles" size={22} color={colors.maroon} />
-      </View>
+      {service.imageUrl ? (
+        <Image source={{ uri: imageUri(service.imageUrl) }} style={styles.thumb} resizeMode="cover" accessibilityIgnoresInvertColors />
+      ) : (
+        <View style={styles.icon}>
+          <Ionicons name="sparkles" size={22} color={colors.maroon} />
+        </View>
+      )}
       <View style={{ flex: 1, gap: space.xs }}>
         <Text style={styles.title}>{pick(service.titleEn, service.titleHi)}</Text>
+        {pick(service.taglineEn ?? "", service.taglineHi ?? "") ? (
+          <Text style={styles.tagline} numberOfLines={2}>
+            {pick(service.taglineEn ?? "", service.taglineHi ?? "")}
+          </Text>
+        ) : null}
         <View style={styles.meta}>
           {min !== null ? <Pill label={`${t("from")} ${formatPaise(min)}`} tone="brand" /> : null}
           <Text style={styles.count}>
@@ -35,6 +45,8 @@ export function ServiceCard({ service }: { service: CatalogService }) {
 const styles = StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: space.md },
   icon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.goldSoft, alignItems: "center", justifyContent: "center" },
+  thumb: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.surfaceContainer },
+  tagline: { fontSize: 12, color: colors.textMuted, lineHeight: 17 },
   title: { fontSize: 15, fontWeight: "600", color: colors.heading, lineHeight: 22 },
   meta: { flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" },
   count: { fontSize: 12, color: colors.textMuted },

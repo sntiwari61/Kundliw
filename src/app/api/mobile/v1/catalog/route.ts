@@ -34,6 +34,9 @@ export async function GET() {
           slug: s.slug,
           titleEn: s.titleEn,
           titleHi: s.titleHi,
+          taglineEn: s.taglineEn ?? null,
+          taglineHi: s.taglineHi ?? null,
+          imageUrl: s.imageUrl && (s.imageUrl.startsWith("/") || s.imageUrl.startsWith("https://")) ? s.imageUrl : null,
           packages: s.packages.map((k) => ({
             id: k.id,
             titleEn: k.titleEn,

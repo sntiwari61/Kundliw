@@ -23,6 +23,9 @@ export interface CatalogService {
   slug: string;
   titleEn: string;
   titleHi: string;
+  taglineEn?: string | null;
+  taglineHi?: string | null;
+  imageUrl?: string | null;
   packages: { id: string; titleEn: string; titleHi: string }[];
   plans: CatalogPlan[];
 }

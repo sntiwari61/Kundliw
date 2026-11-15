@@ -291,6 +291,19 @@ const STRINGS = {
   FINANCE: { en: "Finance", hi: "धन" },
   PROPERTY: { en: "Property", hi: "संपत्ति" },
   GENERAL: { en: "General", hi: "सामान्य" },
+  bookNow: { en: "Book now", hi: "अभी बुक करें" },
+  consultNow: { en: "Ask on WhatsApp", hi: "व्हाट्सऐप पर पूछें" },
+  waHello: { en: "Namaste, I would like to know about your services.", hi: "नमस्ते, मुझे आपकी सेवाओं के बारे में जानकारी चाहिए।" },
+  moreAbout: { en: "More about the Kendra", hi: "केंद्र के बारे में और जानें" },
+  startBooking: { en: "Start booking", hi: "बुकिंग शुरू करें" },
+  allQuestions: { en: "All questions", hi: "सभी प्रश्न" },
+  contactIntroDefault: { en: "Contact Maharshi Kanad Jyotish Kendra for all astrology, ritual and support enquiries.", hi: "ज्योतिष, अनुष्ठान और सहायता से जुड़ी हर पूछताछ के लिए महर्षि कणाद ज्योतिष केंद्र से संपर्क करें।" },
+  maintenanceTitle: { en: "We will be back soon", hi: "हम जल्द ही लौटेंगे" },
+  maintenanceDefault: { en: "The app is being updated. Please try again in a little while.", hi: "ऐप को बेहतर बनाया जा रहा है। कृपया थोड़ी देर बाद फिर प्रयास करें।" },
+  updateTitle: { en: "Please update the app", hi: "कृपया ऐप अपडेट करें" },
+  updateDefault: { en: "A newer version of the app is needed to continue.", hi: "आगे बढ़ने के लिए ऐप का नया संस्करण ज़रूरी है।" },
+  updateNow: { en: "Update", hi: "अपडेट करें" },
+  bookOnWebsiteNote: { en: "Booking is done on the Kendra's website for now. Your account works there too.", hi: "अभी बुकिंग केंद्र की वेबसाइट पर होती है। आपका खाता वहाँ भी चलेगा।" },
 } as const;
 
 const TICKET_STATUS = {

@@ -8,6 +8,8 @@ import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AppBlocked } from "@/components/AppBlocked";
+import { AppConfigProvider, useAppConfig } from "@/lib/appConfig";
 import { LanguageProvider } from "@/lib/i18n";
 import { SessionProvider, useSession } from "@/lib/session";
 import { colors } from "@/theme";
@@ -17,10 +19,14 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const { isLoading, isOffline } = useSession();
+  const { maintenance, outdated } = useAppConfig();
 
   useEffect(() => {
     if (!isLoading && fontsReady) SplashScreen.hideAsync().catch(() => undefined);
   }, [isLoading, fontsReady]);
+
+  if (maintenance) return <AppBlocked reason="maintenance" />;
+  if (outdated) return <AppBlocked reason="update" />;
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface }, animation: "fade" }}>
@@ -67,11 +73,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <LanguageProvider>
+        <AppConfigProvider>
         <SessionProvider>
           <StatusBar style="light" />
           {/* If a font cannot load, the app still opens with the phone's own font */}
           <RootNavigator fontsReady={loaded || !!fontError} />
         </SessionProvider>
+        </AppConfigProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );

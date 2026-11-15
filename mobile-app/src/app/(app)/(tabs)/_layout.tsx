@@ -33,7 +33,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.outline,
         // A label of our own: the default one cut Hindi words down to "..." on some phones
         tabBarLabel: ({ children, color }) => (
-          <Text numberOfLines={1} style={{ fontSize: 11, lineHeight: 16, color, textAlign: "center", fontWeight: "500" }}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} allowFontScaling={false} style={{ fontSize: 11, lineHeight: 16, color, textAlign: "center", fontWeight: "500" }}>
             {children}
           </Text>
         ),

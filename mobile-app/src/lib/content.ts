@@ -172,7 +172,7 @@ export function paragraphs(text: string): string[] {
 }
 
 /** The discount of an offer in words, for example "₹500 off" or "25% off (up to ₹1,000)". */
-export function offerValue(o: OffersContent["offers"][number], money: (paise: number) => string, off: string, upTo: string): string {
+export function offerValue(o: Pick<OffersContent["offers"][number], "discountType" | "discountValuePaise" | "maxDiscountPaise">, money: (paise: number) => string, off: string, upTo: string): string {
   if (o.discountType === "PERCENTAGE") {
     const cap = o.maxDiscountPaise ? ` (${upTo} ${money(o.maxDiscountPaise)})` : "";
     return `${o.discountValuePaise}% ${off}${cap}`;

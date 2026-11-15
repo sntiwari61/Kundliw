@@ -2,7 +2,9 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/Text";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Button, Card, ErrorText } from "@/components/ui";
+import { useAppConfig } from "@/lib/appConfig";
 import { useLanguage } from "@/lib/i18n";
+import { openLink } from "@/lib/links";
 import { useCatalog } from "@/lib/useCatalog";
 import { formatPaise } from "@/lib/validation";
 import { colors, space } from "@/theme";
@@ -12,6 +14,7 @@ export default function ServiceScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { t, pick } = useLanguage();
   const { catalog, error, reload, loading } = useCatalog();
+  const { config } = useAppConfig();
   const service = catalog?.services.find((s) => s.slug === slug);
 
   return (
@@ -46,8 +49,8 @@ export default function ServiceScreen() {
                   </Text>
                 ))}
                 <Button
-                  label={t("bookThisPlan")}
-                  onPress={() => router.push({ pathname: "/book", params: { slug: service.slug, plan: p.slug } })}
+                  label={config.allowBooking ? t("bookThisPlan") : t("bookOnWebsite")}
+                  onPress={() => (config.allowBooking ? router.push({ pathname: "/book", params: { slug: service.slug, plan: p.slug } }) : openLink(config.bookingUrl))}
                 />
               </Card>
             );

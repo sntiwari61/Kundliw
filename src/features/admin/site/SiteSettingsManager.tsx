@@ -7,10 +7,11 @@ import { SocialIcon } from "@/components/content/SocialIcon";
 import { LinkTextarea } from "@/components/admin/LinkTextarea";
 
 const NAV_GROUPS: Array<{ en: string; hi: string; ids: string[] }> = [
-  { en: "Home page", hi: "होम पेज", ids: ["homeHero", "homeSections", "homeCards", "homeServices", "homeProcess", "homeContact", "home", "hero", "heroAnimation"] },
+  { en: "Home page", hi: "होम पेज", ids: ["homeHero", "homeSections", "homeCards", "homeServices", "homeProcess", "homeContact", "homeExtras", "home", "hero", "heroAnimation"] },
+  { en: "Android app", hi: "एंड्रॉइड ऐप", ids: ["appSettings", "mobileApp"] },
   { en: "Menus, links and buttons", hi: "मेन्यू, लिंक और बटन", ids: ["menu", "footerLinks", "usefulLinks", "social", "topbar", "floating", "offerPopup"] },
   { en: "Look of the site", hi: "साइट का रूप", ids: ["theme", "logo", "intro", "general"] },
-  { en: "Pages and content", hi: "पेज और कंटेंट", ids: ["contact", "mapPage", "content", "features", "tools", "technology", "mobileApp", "legal"] },
+  { en: "Pages and content", hi: "पेज और कंटेंट", ids: ["contact", "mapPage", "content", "features", "tools", "technology", "legal"] },
   { en: "Business, Google and notes", hi: "व्यवसाय, गूगल और नोट", ids: ["business", "invoice", "ticket", "seo", "analytics", "admin"] },
 ];
 

@@ -50,6 +50,12 @@
         "projectId": "0731edc4-1d55-4b0e-b27d-ba6081d7e879"
       }
     },
-    "owner": "sntiwari61"
+    "owner": "sntiwari61",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0731edc4-1d55-4b0e-b27d-ba6081d7e879"
+    }
   }
 }
