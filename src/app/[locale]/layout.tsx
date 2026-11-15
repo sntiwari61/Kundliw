@@ -125,12 +125,13 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   const keywords = String(seo.keywords || "").split(",").map((k) => k.trim()).filter(Boolean);
   const image = String(seo.shareImage || "").trim();
   const verification = String(seo.googleVerification || "").trim();
+  const bing = String(seo.bingVerification || "").trim();
   return {
     ...baseMetadata,
     ...(title ? { title: { default: title, template: "%s" } } : {}),
     ...(description ? { description } : {}),
     ...(keywords.length ? { keywords } : {}),
-    ...(verification ? { verification: { google: verification } } : {}),
+    ...(verification || bing ? { verification: { ...(verification ? { google: verification } : {}), ...(bing ? { other: { "msvalidate.01": bing } } : {}) } } : {}),
     ...(String((await getSection("logo")).faviconUrl || "").trim() ? { icons: { icon: String((await getSection("logo")).faviconUrl), apple: "/icons/apple-touch-icon.png" } } : {}),
     openGraph: {
       ...baseMetadata.openGraph,
@@ -259,6 +260,10 @@ export default async function LocaleLayout(
 
   const sameAs = social.map((l) => l.url).filter((u) => /^https?:\/\//.test(u));
 
+  // The person behind the Kendra, so search and answer engines can name them (only when the founder page is filled in)
+  const founderRow = await prisma.founderProfile.findUnique({ where: { id: "default" } }).catch(() => null);
+  const founderOk = !!founderRow && founderRow.isActive && founderRow.nameEn.trim() !== "" && founderRow.nameEn !== "Founder Name";
+
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -285,6 +290,20 @@ export default async function LocaleLayout(
             }
           : {}),
         areaServed: "IN",
+        priceRange: "₹₹",
+        knowsAbout: ["Vedic astrology", "Janam Kundli", "Kundli matching", "Prashna Kundli", "Panchang", "Puja and Vastu consultation"],
+        ...(founderOk
+          ? {
+              founder: {
+                "@type": "Person",
+                name: founderRow!.nameEn,
+                alternateName: founderRow!.nameHi,
+                jobTitle: founderRow!.designationEn,
+                url: `${SITE_URL}/en/founder`,
+              },
+            }
+          : {}),
+        mainEntityOfPage: `${SITE_URL}/en/about`,
         ...(catalogue.length
           ? {
               hasOfferCatalog: {

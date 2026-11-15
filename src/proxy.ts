@@ -2,11 +2,16 @@ import createIntlMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { routing } from "./i18n/routing";
+import { canonicalRedirect } from "@/lib/seo";
 
 const handleI18nRouting = createIntlMiddleware(routing);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Old addresses (the previous domain, the Vercel address, www) go to the real address, permanently, so Google keeps one site
+  const moved = canonicalRedirect(request.headers.get("x-forwarded-host") || request.headers.get("host"), `${pathname}${request.nextUrl.search}`);
+  if (moved) return NextResponse.redirect(moved, 308);
 
   // Let API, static files, and Next.js internals pass untouched
   if (

@@ -6,7 +6,7 @@ export const SITE_NAME_HI = "महर्षि कणाद ज्योति�
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   process.env.NEXTAUTH_URL ||
-  "https://kanadjyotishkendra.vercel.app"
+  "https://maharshikanadjyotishkendra.com"
 ).replace(/\/$/, "");
 
 export const LOCALES = ["hi", "en"] as const;
@@ -38,4 +38,31 @@ export function pageAlternates(locale: string, path = ""): NonNullable<Metadata[
 /** Serialises structured data so it cannot break out of the script element. */
 export function serializeJsonLd(data: unknown): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+/**
+ * Older addresses of this website. They must never be shown on their own: every request to them is sent,
+ * permanently, to the same page on the real address. Add more with LEGACY_HOSTS (comma separated).
+ */
+const BUILT_IN_LEGACY_HOSTS = ["maharshikanadjyotishkendra.online", "www.maharshikanadjyotishkendra.online", "kanadjyotishkendra.vercel.app", "kanad-jyotish-kendra.vercel.app"];
+
+export function legacyHosts(): string[] {
+  const extra = (process.env.LEGACY_HOSTS || "").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
+  return [...BUILT_IN_LEGACY_HOSTS, ...extra];
+}
+
+/** Where a request on an old address (or on www of the real one) should go, or null when it is already on the real address. */
+export function canonicalRedirect(host: string | null | undefined, pathAndQuery: string, siteUrl: string = SITE_URL): string | null {
+  const h = (host || "").toLowerCase().replace(/:d+$/, "");
+  if (!h) return null;
+  let canonicalHost = "";
+  try {
+    canonicalHost = new URL(siteUrl).host.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (h === canonicalHost) return null;
+  const isWwwOfCanonical = h === `www.${canonicalHost}`;
+  if (!isWwwOfCanonical && !legacyHosts().includes(h)) return null;
+  return `${siteUrl}${pathAndQuery.startsWith("/") ? pathAndQuery : `/${pathAndQuery}`}`;
 }

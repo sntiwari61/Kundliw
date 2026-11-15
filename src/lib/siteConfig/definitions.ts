@@ -114,6 +114,7 @@ export const SECTIONS: SectionDef[] = [
       { key: "keywords", en: "Keywords (comma separated)", hi: "कीवर्ड (कॉमा से अलग)", type: "textarea", max: 400 },
       { key: "shareImage", en: "Share image (WhatsApp/Facebook)", hi: "शेयर इमेज", type: "image" },
       { key: "googleVerification", en: "Google Search Console code", hi: "गूगल सर्च कंसोल कोड", type: "text", max: 120 },
+      { key: "bingVerification", en: "Bing Webmaster code", hi: "बिंग वेबमास्टर कोड", type: "text", max: 120 },
     ],
   },
   {
