@@ -16,6 +16,8 @@ interface SessionValue {
   signInWithPassword: (identifier: string, password: string, portal: Portal) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: (password?: string) => Promise<void>;
+  /** Saves a new name and email on the server and updates the signed-in account on screen */
+  updateProfile: (name: string, email: string) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -78,9 +80,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [api],
   );
 
+  const updateProfile = useCallback(
+    async (name: string, email: string) => {
+      const r = await api.request<{ user: ApiUser }>("/api/mobile/v1/me", { method: "PATCH", body: { name: name.trim(), email: email.trim() } });
+      setUser(r.user);
+    },
+    [api],
+  );
+
   const value = useMemo<SessionValue>(
-    () => ({ user, isLoading, isOffline, retry, api, signInWithOtp, signInWithPassword, signOut, deleteAccount }),
-    [user, isLoading, isOffline, retry, api, signInWithOtp, signInWithPassword, signOut, deleteAccount],
+    () => ({ user, isLoading, isOffline, retry, api, signInWithOtp, signInWithPassword, signOut, deleteAccount, updateProfile }),
+    [user, isLoading, isOffline, retry, api, signInWithOtp, signInWithPassword, signOut, deleteAccount, updateProfile],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

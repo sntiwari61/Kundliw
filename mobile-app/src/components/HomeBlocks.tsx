@@ -228,7 +228,8 @@ export function OtherServicesRow({ data }: { data: HomeContent }) {
                     {plainText(pick(o.descEn, o.descHi))}
                   </Text>
                 </View>
-                <View style={{ padding: space.md, paddingTop: 0 }}>
+                <View style={{ padding: space.md, paddingTop: 0, gap: space.sm }}>
+                  <Button label={t("viewDetails")} onPress={() => router.push({ pathname: "/explore/other/[slug]", params: { slug: o.slug } } as never)} />
                   <Button
                     label={t("consultNow")}
                     variant="outline"

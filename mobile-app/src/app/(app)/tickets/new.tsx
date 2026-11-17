@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Button, Card, ErrorText, Field } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
@@ -12,10 +12,11 @@ import { space } from "@/theme";
 export default function NewTicketScreen() {
   const { user, api } = useSession();
   const { t } = useLanguage();
+  const params = useLocalSearchParams<{ order?: string; subject?: string }>();
   const [form, setForm] = useState<TicketForm>({
-    subject: "",
+    subject: typeof params.subject === "string" ? params.subject : "",
     message: "",
-    orderNumber: "",
+    orderNumber: typeof params.order === "string" ? params.order : "",
     contactName: user?.name ?? "",
     contactEmail: user?.email ?? "",
     contactPhone: user?.phone ?? "",

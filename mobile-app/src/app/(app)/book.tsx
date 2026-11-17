@@ -4,20 +4,24 @@ import { Text } from "@/components/Text";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button, Card, ErrorText, Field, Segmented } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { Ionicons } from "@expo/vector-icons";
 import {
   buildBookingBody,
+  combinePlans,
   emptyForm,
   formatDay,
   gstLabel,
   isKundliService,
   needsPartner,
   previewTotals,
+  toggleExtraPlan,
   validateBooking,
   type BookingForm,
   type FormErrors,
   type Gender,
 } from "@/lib/booking";
 import { useLanguage } from "@/lib/i18n";
+import { useMyDetails } from "@/lib/myDetails";
 import { useSession } from "@/lib/session";
 import { useCatalog } from "@/lib/useCatalog";
 import { formatPaise } from "@/lib/validation";
@@ -36,6 +40,7 @@ export default function BookScreen() {
   const { user, api } = useSession();
   const { t, lang, pick } = useLanguage();
   const { catalog, error: loadError, reload, loading } = useCatalog();
+  const { details: saved } = useMyDetails();
 
   const [form, setForm] = useState<BookingForm>(() =>
     emptyForm({ name: user?.name ?? "", phone: user?.phone?.replace(/^\+?91/, "") ?? "", email: user?.email ?? "", language: lang }),
@@ -51,6 +56,10 @@ export default function BookScreen() {
 
   const service = catalog?.services.find((s) => s.slug === slug);
   const plan = service?.plans.find((p) => p.slug === planSlug);
+  // More plans of the same service booked together with the first (at most two more, like the website)
+  const [extras, setExtras] = useState<string[]>([]);
+  const extraPlans = useMemo(() => (service ? service.plans.filter((p) => extras.includes(p.slug)) : []), [service, extras]);
+  const bundle = useMemo(() => (plan ? combinePlans(plan, extraPlans) : null), [plan, extraPlans]);
 
   const set = <K extends keyof BookingForm>(key: K, value: BookingForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -58,9 +67,17 @@ export default function BookScreen() {
   };
 
   const totals = useMemo(
-    () => (plan && catalog ? previewTotals(plan.pricePaise, offer?.discountPaise ?? 0, catalog.gstRateBasisPoints) : null),
-    [plan, catalog, offer],
+    () => (bundle && catalog ? previewTotals(bundle.pricePaise, offer?.discountPaise ?? 0, catalog.gstRateBasisPoints) : null),
+    [bundle, catalog, offer],
   );
+
+  const toggleExtra = (slug: string) => {
+    if (!plan) return;
+    setExtras((x) => toggleExtraPlan(x, slug, plan.slug));
+    // The discount depends on what is booked, so it is worked out again
+    setOffer(null);
+    setOfferError("");
+  };
 
   const applyOffer = async () => {
     if (!plan || !form.offerCode.trim()) return;
@@ -69,7 +86,7 @@ export default function BookScreen() {
     try {
       const r = await api.request<OfferResult>("/api/offers/validate", {
         method: "POST",
-        body: { code: form.offerCode.trim().toUpperCase(), planId: plan.id },
+        body: { code: form.offerCode.trim().toUpperCase(), planId: plan.id, extraPlanIds: extraPlans.length > 0 ? extraPlans.map((x) => x.id) : undefined },
       });
       if (r.isValid && r.code) setOffer({ code: r.code, discountPaise: r.discountPaise ?? 0 });
       else setOfferError(r.reason || "Invalid or unavailable coupon code.");
@@ -85,15 +102,21 @@ export default function BookScreen() {
     set("offerCode", "");
   };
 
+  const fillSaved = () => {
+    if (!saved) return;
+    setForm((f) => ({ ...f, name: saved.name || f.name, gender: saved.gender, dob: saved.dob, tob: saved.tob, timeUnknown: saved.timeUnknown, pob: saved.pob }));
+    setErrors({});
+  };
+
   const submit = async () => {
-    if (!service || !plan) return;
+    if (!service || !plan || !bundle) return;
     // Browsing is open to all; signing in is needed only now, before the order is made. This form stays open underneath.
     if (!user) {
       setFormError(t("loginToBook"));
       router.push("/sign-in");
       return;
     }
-    const found = validateBooking(form, service.slug, plan);
+    const found = validateBooking(form, service.slug, bundle);
     setErrors(found);
     if (Object.keys(found).length > 0) {
       setFormError(t("fixErrors"));
@@ -102,7 +125,7 @@ export default function BookScreen() {
     setFormError("");
     setBusy(true);
     try {
-      const body = buildBookingBody({ ...form, offerCode: offer?.code ?? "" }, service.slug, plan, idempotencyKey);
+      const body = buildBookingBody({ ...form, offerCode: offer?.code ?? "" }, service.slug, bundle, idempotencyKey, extraPlans.map((x) => x.slug));
       const res = await api.request<{ orderId: string }>("/api/booking", { method: "POST", body });
       router.replace({ pathname: "/pay/[id]", params: { id: res.orderId } });
     } catch (e) {
@@ -126,7 +149,7 @@ export default function BookScreen() {
   ];
 
   if (loading) return <ActivityIndicator color={colors.brand} style={{ marginTop: space.xxl }} />;
-  if (!service || !plan) {
+  if (!service || !plan || !bundle) {
     return (
       <View style={styles.content}>
         <ErrorText>{loadError || t("noPlans")}</ErrorText>
@@ -140,11 +163,12 @@ export default function BookScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{pick(service.titleEn, service.titleHi)}</Text>
         <Text style={styles.sub}>
-          {pick(plan.titleEn, plan.titleHi)} · {formatPaise(plan.pricePaise)}
+          {[plan, ...extraPlans].map((x) => pick(x.titleEn, x.titleHi)).join(" + ")} · {formatPaise(bundle.pricePaise)}
         </Text>
 
         <Card>
           <Text style={styles.section}>{t("yourDetails")}</Text>
+          {saved ? <Button label={t("fillSaved")} variant="outline" onPress={fillSaved} /> : null}
           {text("name", t("fullName"), { autoCapitalize: "words" })}
           <Text style={styles.label}>{t("gender")}</Text>
           <Segmented options={genderOptions} value={form.gender} onChange={(v) => set("gender", v)} />
@@ -196,7 +220,34 @@ export default function BookScreen() {
           </Card>
         ) : null}
 
-        {plan.hasCall ? (
+        {service.plans.length > 1 ? (
+          <Card>
+            <Text style={styles.section}>{t("combineTitle")}</Text>
+            <Text style={styles.sub}>{t("combineNote")}</Text>
+            {service.plans
+              .filter((x) => x.slug !== plan.slug)
+              .map((x) => {
+                const on = extras.includes(x.slug);
+                const full = !on && extras.length >= 2;
+                return (
+                  <Pressable
+                    key={x.id}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: on, disabled: full }}
+                    disabled={full}
+                    onPress={() => toggleExtra(x.slug)}
+                    style={[styles.slot, styles.extraRow, on && { borderColor: colors.maroon, backgroundColor: colors.goldSoft }, full && { opacity: 0.5 }]}
+                  >
+                    <Ionicons name={on ? "checkbox" : "square-outline"} size={22} color={on ? colors.maroon : colors.outline} />
+                    <Text style={[styles.slotText, { flex: 1 }]}>{pick(x.titleEn, x.titleHi)}</Text>
+                    <Text style={styles.slotText}>{formatPaise(x.pricePaise)}</Text>
+                  </Pressable>
+                );
+              })}
+          </Card>
+        ) : null}
+
+        {bundle.hasCall ? (
           <Card>
             <Text style={styles.section}>{t("chooseSlot")}</Text>
             {catalog && catalog.slots.length === 0 ? <Text style={styles.sub}>{t("noSlots")}</Text> : null}
@@ -244,7 +295,10 @@ export default function BookScreen() {
         {totals && catalog ? (
           <Card>
             <Text style={styles.section}>{t("priceSummary")}</Text>
-            <Row label={t("basePrice")} value={formatPaise(plan.pricePaise)} />
+            {extraPlans.length > 0
+              ? [plan, ...extraPlans].map((x) => <Row key={x.id} label={pick(x.titleEn, x.titleHi)} value={formatPaise(x.pricePaise)} />)
+              : null}
+            <Row label={t("basePrice")} value={formatPaise(bundle.pricePaise)} />
             {offer ? <Row label={t("discount")} value={`- ${formatPaise(offer.discountPaise)}`} /> : null}
             <Row label={`${t("gstLine")} (${gstLabel(catalog.gstRateBasisPoints)}%)`} value={formatPaise(totals.gst)} />
             <Row label={t("total")} value={formatPaise(totals.net)} bold />
@@ -285,6 +339,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   slotText: { fontSize: 15, color: colors.text, fontWeight: "600" },
+  extraRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   ok: { color: colors.success, fontWeight: "700", fontSize: 14 },
   row: { flexDirection: "row", justifyContent: "space-between", gap: space.md },
   rowText: { fontSize: 15, color: colors.text },

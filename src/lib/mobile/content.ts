@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getActiveSocialLinks, getSection } from "@/lib/siteConfig/service";
 import { isSafeImageSrc, normalizeBlocks, normalizeLinks } from "@/lib/content/media";
+import { kendraEmail } from "@/lib/content/contact";
+import { CREDENTIAL_LABEL, type CredentialKind } from "@/lib/content/credentials";
 
 /**
  * The public pages of the website, shaped for the app. Everything is read from the same places
@@ -9,11 +11,11 @@ import { isSafeImageSrc, normalizeBlocks, normalizeLinks } from "@/lib/content/m
  * adds the website address in front of the ones that start with "/".
  */
 
-const image = (v: string | null | undefined) => (isSafeImageSrc(v) ? (v as string).trim() : null);
+const image = (v: string | null | undefined) => (isSafeImageSrc(v) && !/placehold.co/i.test(v) ? (v as string).trim() : null);
 const text = (v: unknown) => (typeof v === "string" ? v : "");
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 
-export const CONTENT_SECTIONS = ["about", "founder", "faq", "gallery", "blogs", "testimonials", "offers", "contact"] as const;
+export const CONTENT_SECTIONS = ["about", "founder", "faq", "gallery", "blogs", "testimonials", "offers", "contact", "credentials"] as const;
 export type ContentSection = (typeof CONTENT_SECTIONS)[number];
 
 const isTemplate = (value?: string | null) => !value || /admin panel|एडमिन पैनल/i.test(value);
@@ -228,7 +230,7 @@ async function contact() {
     siteNameHi: s?.siteNameHi ?? null,
     phone1: s?.phone1 ?? null,
     phone2: s?.phone2 ?? null,
-    email: s?.email ?? null,
+    email: kendraEmail(s?.email),
     addressEn: s?.addressEn ?? null,
     addressHi: s?.addressHi ?? null,
     city: s?.city ?? null,
@@ -241,7 +243,32 @@ async function contact() {
   };
 }
 
-const LOADERS: Record<ContentSection, () => Promise<unknown>> = { about, founder, faq, gallery, blogs, testimonials, offers, contact };
+/** The official documents (GST, MSME, trademark, ...) the Kendra shows. Their files are public, like on the website's Credentials page. */
+async function credentials() {
+  const rows = await prisma.credential.findMany({ where: { isActive: true }, orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }] }).catch(() => []);
+  return {
+    items: rows
+      .filter((r) => r.fileUrl.startsWith("/api/storage/"))
+      .map((r) => {
+        const label = CREDENTIAL_LABEL[(r.kind in CREDENTIAL_LABEL ? r.kind : "OTHER") as CredentialKind];
+        return {
+          id: r.id,
+          kindEn: label.en,
+          kindHi: label.hi,
+          titleEn: r.titleEn,
+          titleHi: r.titleHi,
+          descriptionEn: r.descriptionEn ?? "",
+          descriptionHi: r.descriptionHi ?? "",
+          documentNumber: r.documentNumber ?? null,
+          fileUrl: r.fileUrl,
+          fileName: r.fileName,
+          mimeType: r.mimeType,
+        };
+      }),
+  };
+}
+
+const LOADERS: Record<ContentSection, () => Promise<unknown>> = { about, founder, faq, gallery, blogs, testimonials, offers, contact, credentials };
 
 export function isContentSection(v: string): v is ContentSection {
   return (CONTENT_SECTIONS as readonly string[]).includes(v);

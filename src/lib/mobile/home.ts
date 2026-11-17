@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSection } from "@/lib/siteConfig/service";
 import { HERO_SLIDES_KEY, normalizeHeroSlides, slideIsShowable } from "@/lib/content/heroSlides";
 import { isSafeImageSrc } from "@/lib/content/media";
+import { kendraEmail } from "@/lib/content/contact";
 
 /**
  * Everything the app's Home screen shows, from the same settings the website's home page uses
@@ -9,7 +10,8 @@ import { isSafeImageSrc } from "@/lib/content/media";
  * Texts that are left empty come back empty: the app then uses its own standard wording.
  */
 
-const image = (v: unknown) => (typeof v === "string" && isSafeImageSrc(v) ? v.trim() : null);
+/** A picture address safe to show; grey stand-in pictures (placehold.co) count as no picture so the app uses its own */
+const image = (v: unknown) => (typeof v === "string" && isSafeImageSrc(v) && !/placehold.co/i.test(v) ? v.trim() : null);
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const flag = (v: unknown, def = true) => (typeof v === "boolean" ? v : def);
 
@@ -141,6 +143,6 @@ export async function loadHome() {
     })),
     faqs: faqs.map((f) => ({ id: f.id, questionEn: f.questionEn, questionHi: f.questionHi, answerEn: f.answerEn, answerHi: f.answerHi })),
     gallery: gallery.map((g) => ({ id: g.id, titleEn: g.titleEn, titleHi: g.titleHi, imageUrl: image(g.imageUrl) })),
-    contact: { phone, phone2: settings?.phone2 ?? null, email: settings?.email ?? null, whatsapp },
+    contact: { phone, phone2: settings?.phone2 ?? null, email: kendraEmail(settings?.email), whatsapp },
   };
 }

@@ -1,7 +1,5 @@
-import { File, Paths } from "expo-file-system";
-import * as Sharing from "expo-sharing";
 import type { ApiClient } from "./api";
-import { API_URL } from "./config";
+import { cacheFileName, downloadAndShare } from "./download";
 
 /** A Vault file as the app receives it from /api/mobile/v1/vault. */
 export interface VaultFile {
@@ -14,6 +12,9 @@ export interface VaultFile {
   /** ADMIN = sent by the Kendra; USER or ASSOCIATE = uploaded by the person */
   uploadedByRole: string;
   uploadedAt: string;
+  /** the order this document was sent for, when there is one */
+  orderId?: string | null;
+  orderNumber?: string | null;
 }
 
 /** The server's limit for one uploaded file. */
@@ -26,9 +27,7 @@ export function formatSize(bytes: number): string {
 }
 
 /** A file name that is safe to write in the app's cache. */
-export function safeFileName(id: string, name: string): string {
-  return `${id}-${name.replace(/[^\w.\- ]+/g, "_")}`.slice(0, 120);
-}
+export const safeFileName = cacheFileName;
 
 export type VaultIcon = "document-text" | "image" | "videocam" | "musical-notes" | "document";
 
@@ -45,14 +44,18 @@ export function iconFor(mime: string): VaultIcon {
  * phone's own viewer or share sheet. The file is not kept in the Vault of anyone else.
  */
 export async function openVaultFile(api: ApiClient, file: VaultFile, dialogTitle: string): Promise<void> {
-  await api.me(); // refreshes the sign-in first if it has expired
-  const token = await api.accessToken();
-  if (!token) throw new Error("Please sign in again.");
-  const destination = new File(Paths.cache, safeFileName(file.id, file.fileName));
-  const saved = await File.downloadFileAsync(`${API_URL}/api/vault/${file.id}?download=1`, destination, {
-    headers: { Authorization: `Bearer ${token}` },
-    idempotent: true,
+  await downloadAndShare(api, `/api/vault/${file.id}?download=1`, safeFileName(file.id, file.fileName), file.mimeType, dialogTitle);
+}
+
+export type VaultFilter = "ALL" | "KENDRA" | "MINE";
+
+/** The files matching a filter (sent by the Kendra / uploaded by the person) and a search text (title in either language, file name, order number). */
+export function filterVault(files: VaultFile[], filter: VaultFilter, query: string): VaultFile[] {
+  const q = query.trim().toLowerCase();
+  return files.filter((f) => {
+    if (filter === "KENDRA" && f.uploadedByRole !== "ADMIN") return false;
+    if (filter === "MINE" && f.uploadedByRole === "ADMIN") return false;
+    if (!q) return true;
+    return [f.titleEn, f.titleHi, f.fileName, f.orderNumber ?? ""].some((v) => (v ?? "").toLowerCase().includes(q));
   });
-  if (!(await Sharing.isAvailableAsync())) throw new Error("This phone cannot open the file.");
-  await Sharing.shareAsync(saved.uri, { mimeType: file.mimeType, dialogTitle });
 }

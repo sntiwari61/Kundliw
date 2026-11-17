@@ -292,6 +292,7 @@ export const SECTIONS: SectionDef[] = [
       { key: "showBlogBlock", en: "Latest articles", hi: "नवीनतम लेख", type: "toggle", def: true },
       { key: "showFaqBlock", en: "Questions and answers", hi: "सामान्य प्रश्न", type: "toggle", def: true },
       { key: "showGalleryBlock", en: "Gallery strip", hi: "गैलरी पट्टी", type: "toggle", def: true },
+      { key: "showPanchangCard", en: "Today's Panchang card on Home", hi: "होम पर आज का पंचांग कार्ड", type: "toggle", def: true },
       { key: "showContactBlock", en: "Contact block at the end of Home", hi: "होम के अंत में संपर्क हिस्सा", type: "toggle", def: true },
       { key: "showCallButton", en: "Floating Call button", hi: "तैरता हुआ कॉल बटन", type: "toggle", def: true },
       { key: "showWhatsappButton", en: "Floating WhatsApp button", hi: "तैरता हुआ व्हाट्सऐप बटन", type: "toggle", def: true },
@@ -311,6 +312,8 @@ export const SECTIONS: SectionDef[] = [
       { key: "pageTestimonials", en: "Explore: Experiences", hi: "जानिए: अनुभव", type: "toggle", def: true },
       { key: "pageFaq", en: "Explore: Questions", hi: "जानिए: प्रश्न", type: "toggle", def: true },
       { key: "pageContact", en: "Explore: Contact", hi: "जानिए: संपर्क", type: "toggle", def: true },
+      { key: "pageGuide", en: "Explore: User guide", hi: "जानिए: उपयोग गाइड", type: "toggle", def: true },
+      { key: "pageCredentials", en: "Explore: Credentials and documents", hi: "जानिए: प्रमाणपत्र एवं दस्तावेज़", type: "toggle", def: true },
     ],
   },
   {

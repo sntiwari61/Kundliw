@@ -10,6 +10,9 @@ export interface MobileVaultFile {
   /** ADMIN (sent by the Kendra), USER or ASSOCIATE (uploaded by the person) */
   uploadedByRole: string;
   uploadedAt: string;
+  /** the order this document belongs to, when it was sent for one */
+  orderId: string | null;
+  orderNumber: string | null;
 }
 
 /** The person's own Vault files, newest first. The storage path is never sent. */
@@ -18,9 +21,20 @@ export async function listVaultFor(userId: string): Promise<MobileVaultFile[]> {
     where: { userId },
     orderBy: { uploadedAt: "desc" },
     take: 200,
-    select: { id: true, titleEn: true, titleHi: true, fileName: true, fileSize: true, mimeType: true, uploadedByRole: true, uploadedAt: true },
+    select: {
+      id: true,
+      titleEn: true,
+      titleHi: true,
+      fileName: true,
+      fileSize: true,
+      mimeType: true,
+      uploadedByRole: true,
+      uploadedAt: true,
+      orderId: true,
+      order: { select: { orderNumber: true } },
+    },
   });
-  return rows.map((r) => ({ ...r, uploadedAt: r.uploadedAt.toISOString() }));
+  return rows.map(({ order, ...r }) => ({ ...r, orderId: r.orderId ?? null, orderNumber: order?.orderNumber ?? null, uploadedAt: r.uploadedAt.toISOString() }));
 }
 
 export interface MobileTicket {

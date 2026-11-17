@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { Hero } from "@/components/Hero";
 import { LangChip } from "@/components/LangChip";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { Text } from "@/components/Text";
-import { Button, EmptyState, ErrorText, Pill, SkeletonList, TapCard } from "@/components/ui";
+import { Button, EmptyState, ErrorText, FilterChips, Pill, SearchField, SkeletonList, TapCard } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { orderStatusLabel, paymentStatusLabel, useLanguage } from "@/lib/i18n";
-import { needsPayment, type MobileOrder } from "@/lib/orders";
+import { countByFilter, filterOrders, needsPayment, type MobileOrder, type OrderFilter } from "@/lib/orders";
 import { useSession } from "@/lib/session";
 import { formatPaise } from "@/lib/validation";
 import { colors, space } from "@/theme";
@@ -33,6 +33,11 @@ function OrdersScreen() {
   const [orders, setOrders] = useState<MobileOrder[] | null>(null);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<OrderFilter>("ALL");
+  const [query, setQuery] = useState("");
+
+  const counts = useMemo(() => countByFilter(orders ?? []), [orders]);
+  const shown = useMemo(() => filterOrders(orders ?? [], filter, query), [orders, filter, query]);
 
   const load = useCallback(async () => {
     setError("");
@@ -68,11 +73,27 @@ function OrdersScreen() {
       <View style={styles.body}>
         <ErrorText>{error}</ErrorText>
         {error ? <Button label={t("retry")} variant="outline" onPress={load} /> : null}
+        {orders && orders.length > 0 ? (
+          <>
+            <SearchField value={query} onChangeText={setQuery} placeholder={t("searchOrders")} />
+            <FilterChips
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "ALL", label: t("filterAll"), count: counts.ALL },
+                { value: "ACTIVE", label: t("filterActive"), count: counts.ACTIVE },
+                { value: "DONE", label: t("filterDone"), count: counts.DONE },
+                { value: "CANCELLED", label: t("filterCancelled"), count: counts.CANCELLED },
+              ]}
+            />
+          </>
+        ) : null}
         {orders === null ? <SkeletonList count={3} height={110} /> : null}
         {orders?.length === 0 && !error ? (
           <EmptyState title={t("noOrders")} action={<Button label={t("tabServices")} onPress={() => router.push("/services")} />} />
         ) : null}
-        {orders?.map((o) => (
+        {orders && orders.length > 0 && shown.length === 0 ? <EmptyState title={t("noMatches")} /> : null}
+        {shown.map((o) => (
           <TapCard key={o.id} onPress={() => router.push({ pathname: "/orders/[id]", params: { id: o.id } })} style={{ gap: space.sm }}>
             <View style={styles.top}>
               <Text style={styles.number}>

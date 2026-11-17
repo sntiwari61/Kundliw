@@ -124,6 +124,30 @@ export interface ContactContent {
   social: { id: string; name: string; url: string }[];
 }
 
+export interface GuideContent {
+  slug: string;
+  titleEn: string;
+  titleHi: string;
+  contentEn: string;
+  contentHi: string;
+  visuals: { kind: "image" | "video"; labelEn: string; labelHi: string; url: string }[];
+}
+export interface CredentialsContent {
+  items: {
+    id: string;
+    kindEn: string;
+    kindHi: string;
+    titleEn: string;
+    titleHi: string;
+    descriptionEn: string;
+    descriptionHi: string;
+    documentNumber: string | null;
+    fileUrl: string;
+    fileName: string;
+    mimeType: string;
+  }[];
+}
+
 /** Pictures saved on the website start with "/"; the app adds the website address in front. */
 export function imageUri(src: string | null | undefined): string | undefined {
   if (!src) return undefined;
@@ -181,7 +205,7 @@ export function offerValue(o: Pick<OffersContent["offers"][number], "discountTyp
 }
 
 /** Loads one public page of the website; `reload` fetches it again. */
-export function useContent<T>(path: string) {
+export function useContent<T>(path: string, signedIn = false) {
   const { api } = useSession();
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState("");
@@ -189,17 +213,51 @@ export function useContent<T>(path: string) {
   const reload = useCallback(async () => {
     setError("");
     try {
-      setData(await api.request<T>(`/api/mobile/v1/content/${path}`, { auth: false }));
+      setData(await api.request<T>(`/api/mobile/v1/content/${path}`, { auth: signedIn }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     }
-  }, [api, path]);
+  }, [api, path, signedIn]);
 
   useEffect(() => {
     reload();
   }, [reload]);
 
   return { data, error, reload, loading: data === null && !error };
+}
+
+/** The questions matching a search text, in question or answer, in either language. */
+export function filterFaq<T extends { questionEn: string; questionHi: string; answerEn: string; answerHi: string }>(items: T[], query: string): T[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((i) => [i.questionEn, i.questionHi, i.answerEn, i.answerHi].some((v) => (v ?? "").toLowerCase().includes(q)));
+}
+
+export interface GuideSection {
+  /** "3. Booking" gives heading "Booking" and number 3; text before the first numbered heading has no heading */
+  heading: string | null;
+  number: number | null;
+  body: string;
+}
+
+/** Splits a guide into its numbered sections. A paragraph whose first line reads "3. Title" starts a new section (the website's rule). */
+export function guideSections(text: string): GuideSection[] {
+  const out: GuideSection[] = [];
+  for (const p of paragraphs(text)) {
+    const lines = p.split("\n");
+    const m = /^(\d{1,2})\.\s+(\S.*)$/.exec(lines[0].trim());
+    if (m) out.push({ heading: m[2].trim(), number: Number(m[1]), body: lines.slice(1).join("\n").trim() });
+    else if (out.length > 0) out[out.length - 1].body = [out[out.length - 1].body, p].filter(Boolean).join("\n\n");
+    else out.push({ heading: null, number: null, body: p });
+  }
+  return out;
+}
+
+/** The sections matching a search text, in the heading or the words. */
+export function filterSections(sections: GuideSection[], query: string): GuideSection[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return sections;
+  return sections.filter((s) => ((s.heading ?? "") + "\n" + s.body).toLowerCase().includes(q));
 }
 
 /** An excerpt without the simple markup, for a short preview. */

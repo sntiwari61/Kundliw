@@ -168,13 +168,14 @@ export function validateBooking(form: BookingForm, serviceSlug: string, plan: Ca
 }
 
 /** The request body for POST /api/booking. Never carries a price: the server works that out. */
-export function buildBookingBody(form: BookingForm, serviceSlug: string, plan: CatalogPlan, idempotencyKey: string) {
+export function buildBookingBody(form: BookingForm, serviceSlug: string, plan: CatalogPlan, idempotencyKey: string, extraPlanSlugs: string[] = []) {
   const dob = parseDate(form.dob) as string;
   const tob = form.timeUnknown ? "12:00" : (parseTime(form.tob) as string);
   const phone = form.phone.replace(/^(\+91|91)/, "").trim();
   return {
     serviceSlug,
     planSlug: plan.slug,
+    extraPlanSlugs: extraPlanSlugs.length > 0 ? extraPlanSlugs : undefined,
     offerCode: form.offerCode.trim() ? form.offerCode.trim().toUpperCase() : undefined,
     slotId: plan.hasCall ? form.slotId : undefined,
     idempotencyKey,
@@ -234,4 +235,33 @@ export function formatDay(iso: string, lang: "hi" | "en"): string {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+export type ServiceFilter = "ALL" | "SAVED";
+
+/** The services matching the filter (all, or the ones the person saved) and a search text (name or tagline in either language). */
+export function filterServices(services: CatalogService[], filter: ServiceFilter, query: string, saved: string[]): CatalogService[] {
+  const q = query.trim().toLowerCase();
+  return services.filter((s) => {
+    if (filter === "SAVED" && !saved.includes(s.slug)) return false;
+    if (!q) return true;
+    return [s.titleEn, s.titleHi, s.taglineEn ?? "", s.taglineHi ?? ""].some((v) => v.toLowerCase().includes(q));
+  });
+}
+
+/** The most plans that can be booked together: the first and two more (the website's rule). */
+export const MAX_COMBINED_PLANS = 3;
+
+/** Adds the plan to the chosen extras, or takes it away when it is already there. Never more than two extras, never the main plan. */
+export function toggleExtraPlan(extras: string[], slug: string, mainSlug: string): string[] {
+  if (slug === mainSlug) return extras;
+  if (extras.includes(slug)) return extras.filter((x) => x !== slug);
+  if (extras.length >= MAX_COMBINED_PLANS - 1) return extras;
+  return [...extras, slug];
+}
+
+/** What the booking behaves like when several plans are combined: prices add up, and one call slot is needed if any of them has a call. */
+export function combinePlans(main: CatalogPlan, extras: CatalogPlan[]): CatalogPlan {
+  const all = [main, ...extras];
+  return { ...main, pricePaise: all.reduce((sum, p) => sum + p.pricePaise, 0), hasCall: all.some((p) => p.hasCall) };
 }

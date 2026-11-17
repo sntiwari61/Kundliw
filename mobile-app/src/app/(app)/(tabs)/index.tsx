@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Hero } from "@/components/Hero";
 import { LangChip } from "@/components/LangChip";
+import { PanchangCard } from "@/components/PanchangCard";
 import { ServiceCard } from "@/components/ServiceCard";
 import { Text } from "@/components/Text";
 import { FadeIn, TileLink } from "@/components/ContentKit";
@@ -68,6 +69,8 @@ export default function HomeScreen() {
     { key: "pageTestimonials", icon: "heart", label: t("testimonialsTitle"), path: "/explore/testimonials" },
     { key: "pageFaq", icon: "help-circle", label: t("faqTitle"), path: "/explore/faq" },
     { key: "pageContact", icon: "call", label: t("contactTitle"), path: "/explore/contact" },
+    { key: "pageGuide", icon: "reader", label: t("guideTitle"), path: "/explore/guide" },
+    { key: "pageCredentials", icon: "ribbon", label: t("credentialsTitle"), path: "/explore/credentials" },
   ];
   const explore = exploreAll.filter((e) => isOn(app, e.key));
 
@@ -123,6 +126,7 @@ export default function HomeScreen() {
 
         <View style={styles.body}>
           {data && on("showAnnouncement") ? <NoticeStrip notices={data.notices} /> : null}
+          {data && on("showPanchangCard") ? <PanchangCard /> : null}
           {data && on("showOffers") ? <OffersRow data={data} /> : null}
 
           {on("showFeaturedServices") || !data ? (

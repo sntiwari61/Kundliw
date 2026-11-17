@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/Text";
 import { colors, fonts, gradients, radius, shadow, space, TOUCH } from "@/theme";
@@ -109,6 +110,64 @@ export function Segmented<T extends string>({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+/** A row of filter chips that scrolls sideways; the chosen one is filled. Each chip can show a count. */
+export function FilterChips<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string; count?: number }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow} accessibilityRole="tablist">
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => onChange(o.value)}
+            style={[styles.chip, on && { backgroundColor: colors.maroon, borderColor: colors.maroon }]}
+          >
+            <Text style={[styles.chipText, on && { color: colors.onMaroon }]}>
+              {o.label}
+              {o.count !== undefined ? ` · ${o.count}` : ""}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/** A search box with a magnifier and a clear button. */
+export function SearchField({ value, onChangeText, placeholder }: { value: string; onChangeText: (v: string) => void; placeholder: string }) {
+  return (
+    <View style={styles.search}>
+      <Ionicons name="search" size={18} color={colors.textMuted} />
+      <TextInput
+        accessibilityLabel={placeholder}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textMuted}
+        selectionColor={colors.brand}
+        autoCorrect={false}
+        returnKeyType="search"
+        style={styles.searchInput}
+      />
+      {value ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={() => onChangeText("")} hitSlop={10}>
+          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -241,6 +300,11 @@ const styles = StyleSheet.create({
   },
   segment: { flex: 1, minHeight: TOUCH, alignItems: "center", justifyContent: "center", paddingHorizontal: space.sm },
   segmentLabel: { fontSize: 14, fontWeight: "600", color: colors.text, textAlign: "center" },
+  chipRow: { gap: space.sm, paddingVertical: space.xs, paddingRight: space.lg },
+  chip: { minHeight: 38, paddingHorizontal: space.md, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.outlineVariant, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" },
+  chipText: { fontSize: 13, fontWeight: "600", color: colors.text },
+  search: { flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: TOUCH, borderWidth: 1.5, borderColor: colors.outlineVariant, borderRadius: radius.md, backgroundColor: colors.card, paddingHorizontal: space.md },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: colors.text, paddingVertical: space.sm },
   errorBox: { backgroundColor: colors.errorContainer, borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: space.sm },
   error: { color: colors.error, fontSize: 14, fontWeight: "500", lineHeight: 20 },
   card: {

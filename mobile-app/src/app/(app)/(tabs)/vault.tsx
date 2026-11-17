@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
@@ -6,12 +6,12 @@ import { Hero } from "@/components/Hero";
 import { LangChip } from "@/components/LangChip";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { Text } from "@/components/Text";
-import { Button, EmptyState, ErrorText, Pill, SkeletonList, TapCard } from "@/components/ui";
+import { Button, EmptyState, ErrorText, FilterChips, Pill, SearchField, SkeletonList, TapCard } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { formatDay } from "@/lib/booking";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { MAX_UPLOAD_BYTES, formatSize, iconFor, openVaultFile, type VaultFile } from "@/lib/vault";
+import { MAX_UPLOAD_BYTES, filterVault, formatSize, iconFor, openVaultFile, type VaultFile, type VaultFilter } from "@/lib/vault";
 import { colors, radius, space } from "@/theme";
 
 /** The person's private documents: reports sent by the Kendra and files they uploaded. */
@@ -30,6 +30,9 @@ function VaultScreen() {
   const [busyId, setBusyId] = useState("");
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<VaultFilter>("ALL");
+  const [query, setQuery] = useState("");
+  const shown = useMemo(() => filterVault(files ?? [], filter, query), [files, filter, query]);
 
   const load = useCallback(async () => {
     try {
@@ -103,9 +106,24 @@ function VaultScreen() {
         <Button label={t("uploadFile")} variant="outline" onPress={upload} busy={uploading} />
         <ErrorText>{error}</ErrorText>
         {info ? <Text style={styles.ok}>{info}</Text> : null}
+        {files && files.length > 0 ? (
+          <>
+            <SearchField value={query} onChangeText={setQuery} placeholder={t("searchVault")} />
+            <FilterChips
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "ALL", label: t("filterAll"), count: files.length },
+                { value: "KENDRA", label: t("filterKendra"), count: files.filter((f) => f.uploadedByRole === "ADMIN").length },
+                { value: "MINE", label: t("filterMine"), count: files.filter((f) => f.uploadedByRole !== "ADMIN").length },
+              ]}
+            />
+          </>
+        ) : null}
         {files === null ? <SkeletonList count={3} /> : null}
+        {files && files.length > 0 && shown.length === 0 ? <EmptyState title={t("noMatches")} /> : null}
         {files?.length === 0 ? <EmptyState title={t("vaultEmpty")} note={t("vaultEmptyNote")} /> : null}
-        {files?.map((f) => (
+        {shown.map((f) => (
           <TapCard key={f.id} onPress={() => (busyId ? undefined : open(f))} style={styles.file}>
             <View style={styles.icon}>
               <Ionicons name={iconFor(f.mimeType)} size={24} color={colors.maroon} />
@@ -117,7 +135,10 @@ function VaultScreen() {
               <Text style={styles.meta}>
                 {formatSize(f.fileSize)} · {formatDay(f.uploadedAt.slice(0, 10), lang)}
               </Text>
-              <Pill label={f.uploadedByRole === "ADMIN" ? t("fromKendra") : t("uploadedByYou")} tone={f.uploadedByRole === "ADMIN" ? "brand" : "neutral"} />
+              <View style={styles.pills}>
+                <Pill label={f.uploadedByRole === "ADMIN" ? t("fromKendra") : t("uploadedByYou")} tone={f.uploadedByRole === "ADMIN" ? "brand" : "neutral"} />
+                {f.orderNumber ? <Pill label={`${t("forOrder")} ${f.orderNumber}`} tone="neutral" /> : null}
+              </View>
             </View>
             {busyId === f.id ? <Text style={styles.meta}>{t("loading")}</Text> : <Ionicons name="open-outline" size={20} color={colors.outline} />}
           </TapCard>
@@ -133,5 +154,6 @@ const styles = StyleSheet.create({
   icon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.goldSoft, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 15, fontWeight: "600", color: colors.heading, lineHeight: 21 },
   meta: { fontSize: 12, color: colors.textMuted },
+  pills: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
   ok: { fontSize: 14, color: colors.success, fontWeight: "500" },
 });

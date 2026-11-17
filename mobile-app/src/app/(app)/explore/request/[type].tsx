@@ -17,6 +17,7 @@ import {
 } from "@/lib/astro";
 import { ApiError } from "@/lib/api";
 import { useLanguage, type StringKey } from "@/lib/i18n";
+import { useMyDetails } from "@/lib/myDetails";
 import { useSession } from "@/lib/session";
 import { colors, radius, space } from "@/theme";
 
@@ -28,6 +29,7 @@ export default function RequestScreen() {
   const kind: Kind = type === "matching" || type === "prashna" ? type : "kundli";
   const { t } = useLanguage();
   const { api, user } = useSession();
+  const { details: saved } = useMyDetails();
 
   const [boy, setBoy] = useState<BirthForm>(emptyBirth());
   const [girl, setGirl] = useState<BirthForm>(emptyBirth("FEMALE"));
@@ -117,6 +119,13 @@ export default function RequestScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
         <Text style={styles.note}>{t("requestNote")}</Text>
+        {saved && kind !== "prashna" ? (
+          <Button
+            label={t("fillSaved")}
+            variant="outline"
+            onPress={() => setBoy({ name: saved.name, gender: saved.gender === "OTHER" ? "" : saved.gender, dob: saved.dob, tob: saved.timeUnknown ? "" : saved.tob, pob: saved.pob })}
+          />
+        ) : null}
 
         {kind === "prashna" ? (
           <Card>
