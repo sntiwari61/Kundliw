@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
-import { loginWithOtp, loginWithPassword } from "./credentialLogin";
+import { loginWithEmailOtp, loginWithOtp, loginWithPassword } from "./credentialLogin";
 import { getClientIp } from "@/lib/rateLimit";
 import { Role } from "@prisma/client";
 
@@ -38,6 +38,20 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         // The same sign-in the mobile app uses (src/lib/auth/credentialLogin.ts)
         return loginWithOtp(credentials);
+      },
+    }),
+
+    // 2b. Email code provider (a 6-digit code sent to the person's email address)
+    CredentialsProvider({
+      id: "email-otp",
+      name: "Email code",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        otp: { label: "One-Time Password", type: "text" },
+        portal: { label: "Login Portal", type: "text" },
+      },
+      async authorize(credentials) {
+        return loginWithEmailOtp(credentials);
       },
     }),
 

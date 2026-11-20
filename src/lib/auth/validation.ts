@@ -78,6 +78,16 @@ export const verifyOtpSchema = z.object({
   otp: otpSchema,
 });
 
+/** Sign in with a code sent to the person's email address instead of their mobile. */
+export const requestEmailOtpSchema = z.object({
+  email: emailSchema,
+});
+
+export const verifyEmailOtpSchema = z.object({
+  email: emailSchema,
+  otp: otpSchema,
+});
+
 /** The sign-in name can be an email address or a mobile number. */
 export const emailPasswordLoginSchema = z.object({
   email: z.string().trim().min(3, "Enter your email or mobile number").max(254),

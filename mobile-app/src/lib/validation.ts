@@ -9,6 +9,11 @@ export function isValidOtp(value: string): boolean {
   return /^\d{6}$/.test(value.trim());
 }
 
+/** An email address of the usual shape (the server checks it again). */
+export function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+}
+
 /** Paise to a rupee label: 249900 -> "₹2,499", 265394 -> "₹2,653.94". */
 export function formatPaise(paise: number): string {
   const rupees = paise / 100;

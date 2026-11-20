@@ -15,6 +15,14 @@ const ipRateMap = new Map<string, RateRecord>();
 const phoneRateMap = new Map<string, RateRecord>();
 
 /**
+ * Codes sent by email are kept in the same table as mobile codes, under this key in place of the
+ * phone number ("email:" can never be a phone number, so the two cannot be mixed up).
+ */
+export function emailOtpKey(email: string): string {
+  return `email:${email.trim().toLowerCase()}`;
+}
+
+/**
  * Generates a cryptographically secure 6-digit numeric OTP string.
  */
 export function generateNumericOtp(digits = 6): string {

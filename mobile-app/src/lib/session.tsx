@@ -13,6 +13,7 @@ interface SessionValue {
   retry: () => void;
   api: ApiClient;
   signInWithOtp: (phone: string, otp: string, portal: Portal) => Promise<void>;
+  signInWithEmailOtp: (email: string, otp: string, portal: Portal) => Promise<void>;
   signInWithPassword: (identifier: string, password: string, portal: Portal) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: (password?: string) => Promise<void>;
@@ -64,6 +65,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     async (phone: string, otp: string, portal: Portal) => setUser(await api.signInWithOtp(phone, otp, portal)),
     [api],
   );
+  const signInWithEmailOtp = useCallback(
+    async (email: string, otp: string, portal: Portal) => setUser(await api.signInWithEmailOtp(email, otp, portal)),
+    [api],
+  );
   const signInWithPassword = useCallback(
     async (identifier: string, password: string, portal: Portal) => setUser(await api.signInWithPassword(identifier, password, portal)),
     [api],
@@ -89,8 +94,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<SessionValue>(
-    () => ({ user, isLoading, isOffline, retry, api, signInWithOtp, signInWithPassword, signOut, deleteAccount, updateProfile }),
-    [user, isLoading, isOffline, retry, api, signInWithOtp, signInWithPassword, signOut, deleteAccount, updateProfile],
+    () => ({ user, isLoading, isOffline, retry, api, signInWithOtp, signInWithEmailOtp, signInWithPassword, signOut, deleteAccount, updateProfile }),
+    [user, isLoading, isOffline, retry, api, signInWithOtp, signInWithEmailOtp, signInWithPassword, signOut, deleteAccount, updateProfile],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

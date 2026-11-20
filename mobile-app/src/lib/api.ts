@@ -202,6 +202,12 @@ export function createApiClient(opts: ApiClientOptions) {
     async signInWithOtp(phone: string, otp: string, portal: Portal) {
       return signedIn(await request<SignInResult>("/api/mobile/v1/auth/otp/verify", { method: "POST", body: { phone, otp, portal }, auth: false }));
     },
+    sendEmailOtp(email: string) {
+      return request<{ success: boolean }>("/api/auth/otp/email/send", { method: "POST", body: { email: email.trim() }, auth: false });
+    },
+    async signInWithEmailOtp(email: string, otp: string, portal: Portal) {
+      return signedIn(await request<SignInResult>("/api/mobile/v1/auth/email-otp/verify", { method: "POST", body: { email: email.trim(), otp, portal }, auth: false }));
+    },
     async signInWithPassword(identifier: string, password: string, portal: Portal) {
       return signedIn(await request<SignInResult>("/api/mobile/v1/auth/login", { method: "POST", body: { identifier, password, portal }, auth: false }));
     },

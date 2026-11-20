@@ -10,20 +10,21 @@ import { ApiError, type Portal } from "@/lib/api";
 import { siteUrl } from "@/lib/config";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { isValidOtp, isValidPhone } from "@/lib/validation";
+import { isValidEmail, isValidOtp, isValidPhone } from "@/lib/validation";
 import { colors, gradients, radius, shadow, space } from "@/theme";
 
-type Method = "otp" | "password";
+type Method = "otp" | "email" | "password";
 
 export default function SignInScreen() {
   const { t, lang } = useLanguage();
   const insets = useSafeAreaInsets();
-  const { api, user, signInWithOtp, signInWithPassword } = useSession();
+  const { api, user, signInWithOtp, signInWithEmailOtp, signInWithPassword } = useSession();
   const leave = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
   const [portal, setPortal] = useState<Portal>("user");
   const [method, setMethod] = useState<Method>("otp");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [identifier, setIdentifier] = useState("");
@@ -55,9 +56,18 @@ export default function SignInScreen() {
     });
   };
 
+  const sendEmailCode = () => {
+    if (!isValidEmail(email)) return setError(t("errEmailAddr"));
+    return run(async () => {
+      await api.sendEmailOtp(email);
+      setOtp("");
+      setOtpSent(true);
+    });
+  };
+
   const verifyOtp = () => {
     if (!isValidOtp(otp)) return setError(t("invalidOtp"));
-    return run(() => signInWithOtp(phone, otp, portal));
+    return run(() => (method === "email" ? signInWithEmailOtp(email, otp, portal) : signInWithOtp(phone, otp, portal)));
   };
 
   const passwordSignIn = () => {
@@ -108,19 +118,21 @@ export default function SignInScreen() {
             <Segmented
               options={[
                 { value: "otp", label: t("mobileOtp") },
-                { value: "password", label: t("emailPassword") },
+                { value: "email", label: t("emailCode") },
+                { value: "password", label: t("passwordShort") },
               ]}
               value={method}
               onChange={(m) => {
                 setMethod(m);
+                setOtpSent(false);
                 resetError();
               }}
             />
 
-            {method === "otp" ? (
+            {method !== "password" ? (
               otpSent ? (
                 <>
-                  <Text style={styles.hint}>{t("otpSent")}</Text>
+                  <Text style={styles.hint}>{method === "email" ? t("emailCodeSent") : t("otpSent")}</Text>
                   <Field
                     label={t("enterOtp")}
                     value={otp}
@@ -134,7 +146,7 @@ export default function SignInScreen() {
                   <ErrorText>{error}</ErrorText>
                   <Button label={t("verify")} onPress={verifyOtp} busy={busy} />
                   <Button
-                    label={t("changeNumber")}
+                    label={method === "email" ? t("changeEmail") : t("changeNumber")}
                     variant="text"
                     disabled={busy}
                     onPress={() => {
@@ -142,6 +154,22 @@ export default function SignInScreen() {
                       resetError();
                     }}
                   />
+                </>
+              ) : method === "email" ? (
+                <>
+                  <Field
+                    label={t("emailLabel")}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    placeholder="name@example.com"
+                  />
+                  <ErrorText>{error}</ErrorText>
+                  <Button label={t("sendEmailCode")} onPress={sendEmailCode} busy={busy} />
                 </>
               ) : (
                 <>

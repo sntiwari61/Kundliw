@@ -50,7 +50,10 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
   const showModeSwitcher = portal !== "super-admin";
 
   // OTP Form States
+  // The code can go to the mobile number (SMS) or to an email address
+  const [otpChannel, setOtpChannel] = useState<"PHONE" | "EMAIL">("PHONE");
   const [phone, setPhone] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -91,10 +94,11 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/otp/send", {
+      const byEmail = otpChannel === "EMAIL";
+      const res = await fetch(byEmail ? "/api/auth/otp/email/send" : "/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify(byEmail ? { email: otpEmail } : { phone }),
       });
 
       const data = await res.json();
@@ -104,7 +108,11 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
 
       setOtpSent(true);
       setResendCooldown(60);
-      setSuccessMsg("One-time password dispatched. Check your messages.");
+      setSuccessMsg(
+        otpChannel === "EMAIL"
+          ? locale === "hi" ? "कोड आपके ईमेल पर भेज दिया गया है। अपना इनबॉक्स (और स्पैम) देखें।" : "A code has been emailed to you. Check your inbox (and spam)."
+          : "One-time password dispatched. Check your messages.",
+      );
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to send OTP");
     } finally {
@@ -119,9 +127,9 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
     setLoading(true);
 
     try {
-      const res = await signIn("mobile-otp", {
+      const res = await signIn(otpChannel === "EMAIL" ? "email-otp" : "mobile-otp", {
         redirect: false,
-        phone,
+        ...(otpChannel === "EMAIL" ? { email: otpEmail } : { phone }),
         otp,
         portal,
         callbackUrl,
@@ -309,6 +317,45 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
             <div className="space-y-4">
               {!otpSent ? (
                 <form onSubmit={handleRequestOtp} className="space-y-4">
+                  <div role="tablist" className="grid grid-cols-2 gap-2">
+                    {(["PHONE", "EMAIL"] as const).map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        role="tab"
+                        aria-selected={otpChannel === c}
+                        onClick={() => {
+                          setOtpChannel(c);
+                          setErrorMsg(null);
+                        }}
+                        className={`min-h-[44px] rounded border text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2 transition-colors ${
+                          otpChannel === c ? "bg-secondary text-on-secondary border-secondary" : "border-outline-variant text-on-surface-variant hover:text-on-surface"
+                        }`}
+                      >
+                        {c === "PHONE" ? <Phone className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
+                        <span>{c === "PHONE" ? (locale === "hi" ? "मोबाइल पर कोड" : "Code by SMS") : locale === "hi" ? "ईमेल पर कोड" : "Code by email"}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {otpChannel === "EMAIL" ? (
+                    <div>
+                      <label className="block text-xs uppercase tracking-wider font-bold text-secondary mb-1">
+                        {locale === "hi" ? "ईमेल पता" : "Email address"}
+                      </label>
+                      <input
+                        type="email"
+                        autoComplete="email"
+                        value={otpEmail}
+                        onChange={(e) => setOtpEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        className="w-full bg-surface-container-lowest text-on-surface px-3 py-2.5 rounded border border-outline-variant focus:border-secondary focus:outline-none text-sm min-h-[44px]"
+                        required
+                      />
+                      <span className="block text-[11px] text-on-surface-variant mt-1">
+                        {locale === "hi" ? "आपके ईमेल पर 6 अंकों का कोड भेजा जाएगा।" : "We will email you a 6-digit verification code."}
+                      </span>
+                    </div>
+                  ) : (
                   <div>
                     <label className="block text-xs uppercase tracking-wider font-bold text-secondary mb-1">
                       {tAuth("phoneLabel")}
@@ -327,6 +374,7 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
                       Enter 10-digit mobile number to receive a 6-digit verification code.
                     </span>
                   </div>
+                  )}
 
                   <button
                     type="submit"
@@ -349,7 +397,7 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
                         onClick={() => setOtpSent(false)}
                         className="text-xs text-primary font-semibold hover:underline"
                       >
-                        Change Number
+                        {otpChannel === "EMAIL" ? (locale === "hi" ? "ईमेल बदलें" : "Change email") : "Change Number"}
                       </button>
                     </div>
                     <input
@@ -365,7 +413,7 @@ export function SignInForm({ portal }: { portal: LoginPortal }) {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-on-surface-variant">
-                    <span>Code sent to {phone}</span>
+                    <span>Code sent to {otpChannel === "EMAIL" ? otpEmail : phone}</span>
                     <button
                       type="button"
                       disabled={resendCooldown > 0 || loading}

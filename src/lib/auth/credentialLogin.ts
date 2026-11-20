@@ -1,8 +1,8 @@
 import * as bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { verifyOtpHash, isOtpExpired, canAttemptOtpVerification } from "./otp";
-import { verifyOtpSchema, emailPasswordLoginSchema, emailSchema, phoneSchema } from "./validation";
+import { verifyOtpHash, isOtpExpired, canAttemptOtpVerification, emailOtpKey } from "./otp";
+import { verifyOtpSchema, verifyEmailOtpSchema, emailPasswordLoginSchema, emailSchema, phoneSchema } from "./validation";
 import { checkDbRateLimit, resetDbRateLimit } from "@/lib/rateLimit";
 
 /**
@@ -30,19 +30,13 @@ const toSignedIn = (u: { id: string; name: string | null; email: string | null; 
   role: u.role,
 });
 
-/** Mobile OTP sign-in for the User and Associate portals (Super Admin never uses OTP). */
-export async function loginWithOtp(credentials: { phone?: unknown; otp?: unknown; portal?: unknown } | undefined): Promise<SignedInUser> {
-  const parsed = verifyOtpSchema.safeParse(credentials);
-  if (!parsed.success) {
-    throw new Error("Invalid mobile number or OTP format");
-  }
-
-  const portal = credentials?.portal === "associate" ? "associate" : "user";
-  const { phone, otp } = parsed.data;
-
-  // Check active OTP record
+/**
+ * Checks a one-time code against the latest unused one for this key (a phone number, or an email key)
+ * and uses it up when it is right. Throws a message that is safe to show when it is not.
+ */
+async function consumeOtp(key: string, otp: string): Promise<void> {
   const record = await prisma.otpVerification.findFirst({
-    where: { phone, consumedAt: null },
+    where: { phone: key, consumedAt: null },
     orderBy: { createdAt: "desc" },
   });
 
@@ -67,11 +61,56 @@ export async function loginWithOtp(credentials: { phone?: unknown; otp?: unknown
     throw new Error("Incorrect OTP. Please try again.");
   }
 
-  // Consume OTP
   await prisma.otpVerification.update({
     where: { id: record.id },
     data: { consumedAt: new Date() },
   });
+}
+
+/** Sign in with a code sent to an email address. The same rules as the mobile OTP: User and Associate portals only. */
+export async function loginWithEmailOtp(credentials: { email?: unknown; otp?: unknown; portal?: unknown } | undefined): Promise<SignedInUser> {
+  const parsed = verifyEmailOtpSchema.safeParse(credentials);
+  if (!parsed.success) {
+    throw new Error("Invalid email or OTP format");
+  }
+
+  const portal = credentials?.portal === "associate" ? "associate" : "user";
+  const { email, otp } = parsed.data;
+
+  await consumeOtp(emailOtpKey(email), otp);
+  await resetDbRateLimit("OTP_EMAIL", email);
+
+  let user = await prisma.user.findUnique({ where: { email } });
+  const expectedRole = portal === "associate" ? Role.ASSOCIATE : Role.USER;
+  if (user && user.role !== expectedRole) {
+    throw new Error(WRONG_PORTAL_MESSAGE);
+  }
+  if (!user && portal === "associate") {
+    throw new Error("No Associate account found. Please register as an Associate first.");
+  }
+  if (!user) {
+    user = await prisma.user.create({
+      data: { email, name: email.split("@")[0], role: Role.USER, emailVerified: new Date() },
+    });
+  } else if (!user.emailVerified) {
+    // Receiving the code proves the address is theirs
+    user = await prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
+  }
+
+  return toSignedIn(user);
+}
+
+/** Mobile OTP sign-in for the User and Associate portals (Super Admin never uses OTP). */
+export async function loginWithOtp(credentials: { phone?: unknown; otp?: unknown; portal?: unknown } | undefined): Promise<SignedInUser> {
+  const parsed = verifyOtpSchema.safeParse(credentials);
+  if (!parsed.success) {
+    throw new Error("Invalid mobile number or OTP format");
+  }
+
+  const portal = credentials?.portal === "associate" ? "associate" : "user";
+  const { phone, otp } = parsed.data;
+
+  await consumeOtp(phone, otp);
 
   // Reset rate limits on success
   await resetDbRateLimit("OTP_PHONE", phone);

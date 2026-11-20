@@ -435,6 +435,11 @@ const STRINGS = {
   rahuKaalLabel: { en: "Rahu Kaal", hi: "राहु काल" },
   abhijitLabel: { en: "Abhijit Muhurat", hi: "अभिजीत मुहूर्त" },
   fullPanchang: { en: "Full Panchang", hi: "पूरा पंचांग" },
+  emailCode: { en: "Email code", hi: "ईमेल कोड" },
+  passwordShort: { en: "Password", hi: "पासवर्ड" },
+  sendEmailCode: { en: "Send code to my email", hi: "मेरे ईमेल पर कोड भेजें" },
+  emailCodeSent: { en: "A 6-digit code was emailed to you. Check your inbox and spam.", hi: "आपके ईमेल पर 6 अंकों का कोड भेजा गया है। इनबॉक्स और स्पैम देखें।" },
+  changeEmail: { en: "Change email", hi: "ईमेल बदलें" },
 } as const;
 
 const TICKET_STATUS = {
